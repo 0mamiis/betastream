@@ -62,8 +62,10 @@ android {
         applicationId = "com.lagradost.cloudstream3"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 67
-        versionName = "4.6.2"
+
+        // 4.6.3-PRE will be produced by the 'prerelease' flavor via versionNameSuffix
+        versionCode = 68
+        versionName = "4.6.3"
 
         resValue("string", "commit_hash", getGitCommitHash())
 
@@ -135,11 +137,11 @@ android {
     }
 
     java {
-	    // Use Java 17 toolchain even if a higher JDK runs the build.
+        // Use Java 17 toolchain even if a higher JDK runs the build.
         // We still use Java 8 for now which higher JDKs have deprecated.
-	    toolchain {
-		    languageVersion.set(JavaLanguageVersion.of(libs.versions.jdkToolchain.get()))
-    	}
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(libs.versions.jdkToolchain.get()))
+        }
     }
 
     lint {
@@ -161,6 +163,17 @@ android {
     }
 
     namespace = "com.lagradost.cloudstream3"
+}
+
+// Keep Kotlin JVM target consistent with Java compileOptions + opt-in to prerelease/internal APIs.
+tasks.withType<KotlinJvmCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(javaTarget)
+        freeCompilerArgs.addAll(
+            "-opt-in=com.lagradost.cloudstream3.Prerelease",
+            "-opt-in=com.lagradost.cloudstream3.InternalAPI",
+        )
+    }
 }
 
 dependencies {
@@ -238,54 +251,9 @@ tasks.register<Copy>("copyJar") {
     dependsOn("build", ":library:jvmJar")
     from(
         "build/intermediates/compile_app_classes_jar/prereleaseDebug/bundlePrereleaseDebugClassesToCompileJar",
-        "../library/build/libs"
+        "../library/build/libs/library-jvm.jar"
     )
-    into("build/app-classes")
-    include("classes.jar", "library-jvm*.jar")
-    // Remove the version
-    rename("library-jvm.*.jar", "library-jvm.jar")
-}
-
-// Merge the app classes and the library classes into classes.jar
-tasks.register<Jar>("makeJar") {
-    // Duplicates cause hard to catch errors, better to fail at compile time.
-    duplicatesStrategy = DuplicatesStrategy.FAIL
-    dependsOn(tasks.getByName("copyJar"))
-    from(
-        zipTree("build/app-classes/classes.jar"),
-        zipTree("build/app-classes/library-jvm.jar")
-    )
-    destinationDirectory.set(layout.buildDirectory)
-    archiveBaseName = "classes"
-}
-
-tasks.withType<KotlinJvmCompile> {
-    compilerOptions {
-        jvmTarget.set(javaTarget)
-        jvmDefault.set(JvmDefaultMode.ENABLE)
-        freeCompilerArgs.add("-Xannotation-default-target=param-property")
-        optIn.addAll(
-            "com.lagradost.cloudstream3.InternalAPI",
-            "com.lagradost.cloudstream3.Prerelease",
-        )
-    }
-}
-
-dokka {
-    moduleName = "App"
-    dokkaSourceSets {
-        main {
-            analysisPlatform = KotlinPlatform.JVM
-            documentedVisibilities(
-                VisibilityModifier.Public,
-                VisibilityModifier.Protected
-            )
-
-            sourceLink {
-                localDirectory = file("..")
-                remoteUrl("https://github.com/recloudstream/cloudstream/tree/master")
-                remoteLineSuffix = "#L"
-            }
-        }
-    }
+    into("build/libs/")
+    rename("bundlePrereleaseDebugClassesToCompileJar", "cloudstream.jar")
+    rename("library-jvm.jar", "cloudstreamlib.jar")
 }

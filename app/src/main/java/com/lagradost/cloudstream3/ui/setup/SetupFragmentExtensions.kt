@@ -2,8 +2,10 @@ package com.lagradost.cloudstream3.ui.setup
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.content.edit
 import androidx.core.view.isVisible
 import androidx.navigation.fragment.findNavController
+import androidx.preference.PreferenceManager
 import com.lagradost.cloudstream3.APIHolder.apis
 import com.lagradost.cloudstream3.MainActivity.Companion.afterRepositoryLoadedEvent
 import com.lagradost.cloudstream3.R
@@ -22,6 +24,14 @@ class SetupFragmentExtensions : BaseFragment<FragmentSetupExtensionsBinding>(
 ) {
     companion object {
         const val SETUP_EXTENSION_BUNDLE_IS_SETUP = "isSetup"
+
+        /**
+         * Used to suppress the automatic "no extensions installed" setup screen once.
+         *
+         * This is useful when the Activity is recreated (e.g. theme change) while the user is in
+         * Settings; MainActivity may otherwise navigate to this screen if there are no plugins.
+         */
+        const val SKIP_SETUP_EXTENSIONS_ONCE_KEY = "SKIP_SETUP_EXTENSIONS_ONCE"
 
         /**
          * If false then this is treated a singular screen with a done button
@@ -70,6 +80,20 @@ class SetupFragmentExtensions : BaseFragment<FragmentSetupExtensionsBinding>(
 
     override fun onBindingCreated(binding: FragmentSetupExtensionsBinding) {
         val isSetup = arguments?.getBoolean(SETUP_EXTENSION_BUNDLE_IS_SETUP) ?: false
+
+        // If we just recreated the activity (theme/layout change) and there are no plugins,
+        // MainActivity may navigate here. In that case: immediately go back.
+        if (!isSetup) {
+            val prefs = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            val skipOnce = prefs.getBoolean(SKIP_SETUP_EXTENSIONS_ONCE_KEY, false)
+            if (skipOnce) {
+                prefs.edit { putBoolean(SKIP_SETUP_EXTENSIONS_ONCE_KEY, false) }
+                if (!findNavController().popBackStack()) {
+                    findNavController().navigate(R.id.navigation_home)
+                }
+                return
+            }
+        }
 
         safe {
             setRepositories()

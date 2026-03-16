@@ -2,7 +2,6 @@ package com.lagradost.cloudstream3.ui.search
 
 import android.app.Activity
 import android.content.Intent
-import android.content.DialogInterface
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.os.Bundle
@@ -15,7 +14,6 @@ import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
@@ -571,38 +569,6 @@ class SearchFragment : BaseFragment<FragmentSearchBinding>(
                     if (searchItem == null) return@SearchHistoryAdaptor
                     removeKey("$currentAccount/$SEARCH_HISTORY_KEY", searchItem.key)
                     searchViewModel.updateHistory()
-                }
-                
-                SEARCH_HISTORY_CLEAR -> {
-                    // Show confirmation dialog (from footer button)
-                    activity?.let { ctx ->
-                        val builder: AlertDialog.Builder = AlertDialog.Builder(ctx)
-                        val dialogClickListener =
-                            DialogInterface.OnClickListener { _, which ->
-                                when (which) {
-                                    DialogInterface.BUTTON_POSITIVE -> {
-                                        removeKeys("$currentAccount/$SEARCH_HISTORY_KEY")
-                                        searchViewModel.updateHistory()
-                                    }
-
-                                    DialogInterface.BUTTON_NEGATIVE -> {
-                                    }
-                                }
-                            }
-
-                        try {
-                            builder.setTitle(R.string.clear_history).setMessage(
-                                ctx.getString(R.string.delete_message).format(
-                                    ctx.getString(R.string.history)
-                                )
-                            )
-                                .setPositiveButton(R.string.sort_clear, dialogClickListener)
-                                .setNegativeButton(R.string.cancel, dialogClickListener)
-                                .show().setDefaultFocus()
-                        } catch (e: Exception) {
-                            logError(e)
-                        }
-                    }
                 }
 
                 else -> {

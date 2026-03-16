@@ -16,8 +16,10 @@
             android:id="@+id/nav_rail_view"
             android:layout_width="@dimen/nav_rail_view_width"
             android:layout_height="match_parent"
-            android:background="?attr/primaryGrayBackground"
+            android:background="@drawable/nav_bar_bg"
             android:descendantFocusability="afterDescendants"
+            app:itemBackground="@drawable/nav_item_bg_selector"
+            app:itemIconSize="@dimen/nav_item_icon_size"
             app:itemIconTint="@color/item_select_color"
             app:itemTextColor="@color/item_select_color"
             app:headerLayout="@layout/rail_header"
@@ -27,7 +29,7 @@
             app:menu="@menu/bottom_nav_menu"
             app:menuGravity="center">
 
-            <include layout="@layout/rail_footer"/>
+            <include layout="@layout/rail_footer" />
 
         </com.google.android.material.navigationrail.NavigationRailView>
         <!-- android:layout_height="65dp"
@@ -36,10 +38,14 @@
                   -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/nav_view"
-            android:layout_height="@dimen/nav_view_height"
             android:layout_width="0dp"
+            android:layout_height="@dimen/nav_view_height"
+            android:background="@drawable/nav_bar_bg"
+            app:itemBackground="@drawable/nav_item_bg_selector"
+            app:itemIconSize="@dimen/nav_item_icon_size"
+            app:itemPaddingTop="0dp"
+            app:itemPaddingBottom="0dp"
             app:labelVisibilityMode="unlabeled"
-            android:background="?attr/primaryGrayBackground"
 
             app:itemIconTint="@color/item_select_color"
             app:itemTextColor="@color/item_select_color"

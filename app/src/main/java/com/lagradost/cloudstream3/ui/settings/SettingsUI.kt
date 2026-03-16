@@ -25,6 +25,7 @@ import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.hideOn
 import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setPaddingBottom
 import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setToolBarScrollFlags
 import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setUpToolbar
+import com.lagradost.cloudstream3.ui.setup.SetupFragmentExtensions
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showBottomDialog
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showDialog
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showMultiDialog
@@ -146,15 +147,19 @@ class SettingsUI : BasePreferenceFragmentCompat() {
                 settingsManager.getString(getString(R.string.app_theme_key), prefValues.first())
 
             activity?.showBottomDialog(
-                prefNames.toList(),
-                prefValues.indexOf(currentLayout),
-                getString(R.string.app_theme_settings),
-                true,
-                {}
+                items = prefNames.toList(),
+                selectedIndex = prefValues.indexOf(currentLayout),
+                name = getString(R.string.app_theme_settings),
+                // Apply instantly when user selects an item (no "Uygula" button needed)
+                showApply = false,
+                dismissCallback = {}
             ) {
                 try {
                     settingsManager.edit {
                         putString(getString(R.string.app_theme_key), prefValues[it])
+                        // Avoid MainActivity showing the "setup extensions" screen after recreate
+                        // when the user is just changing theme from Settings.
+                        putBoolean(SetupFragmentExtensions.SKIP_SETUP_EXTENSIONS_ONCE_KEY, true)
                     }
                     activity?.recreate()
                 } catch (e: Exception) {

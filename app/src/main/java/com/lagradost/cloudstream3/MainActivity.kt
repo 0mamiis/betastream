@@ -1772,7 +1772,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
             var prevId: Int? = null
             var prevView: View? = null
 
-            // The genius engineers at google did not actually 
+            // The genius engineers at google did not actually
             // write a nextFocus for the navrail
             rail.findViewById<View?>(R.id.navigation_settings)?.nextFocusDownId =
                 R.id.nav_footer_profile_card
@@ -2005,21 +2005,25 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
             removeKey(USER_SELECTED_HOMEPAGE_API)
         }
 
-        try {
-            if (getKey(HAS_DONE_SETUP_KEY, false) != true) {
-                navController.navigate(R.id.navigation_setup_language)
-                // If no plugins bring up extensions screen
-            } else if (PluginManager.getPluginsOnline().isEmpty()
-                && PluginManager.getPluginsLocal().isEmpty()
+        // Only do initial setup navigation on a cold start.
+        // (Theme changes call Activity.recreate(), which would otherwise re-trigger the setup screen.)
+        if (savedInstanceState == null) {
+            try {
+                if (getKey(HAS_DONE_SETUP_KEY, false) != true) {
+                    navController.navigate(R.id.navigation_setup_language)
+                    // If no plugins bring up extensions screen
+                } else if (PluginManager.getPluginsOnline().isEmpty()
+                    && PluginManager.getPluginsLocal().isEmpty()
 //                && PREBUILT_REPOSITORIES.isNotEmpty()
-            ) {
-                navController.navigate(
-                    R.id.navigation_setup_extensions,
-                    SetupFragmentExtensions.newInstance(false)
-                )
+                ) {
+                    navController.navigate(
+                        R.id.navigation_setup_extensions,
+                        SetupFragmentExtensions.newInstance(false)
+                    )
+                }
+            } catch (e: Exception) {
+                logError(e)
             }
-        } catch (e: Exception) {
-            logError(e)
         }
 
 //        Used to check current focus for TV
@@ -2036,7 +2040,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
             updateLocale()
             runDefault()
         }
-        
+
         // Start the download queue
         DownloadQueueManager.init(this)
     }

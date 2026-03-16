@@ -26,6 +26,7 @@ import com.lagradost.cloudstream3.ui.settings.Globals.PHONE
 import com.lagradost.cloudstream3.ui.settings.Globals.TV
 import com.lagradost.cloudstream3.ui.settings.Globals.isLandscape
 import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
+import com.lagradost.cloudstream3.utils.AppContextUtils.openBrowser
 import com.lagradost.cloudstream3.utils.DataStoreHelper
 import com.lagradost.cloudstream3.utils.ImageLoader.loadImage
 import com.lagradost.cloudstream3.utils.UIHelper.clipboardHelper
@@ -80,7 +81,7 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
         fun Preference?.hideOn(layoutFlags: Int): Preference? {
             if (this == null) return null
             this.isVisible = !isLayout(layoutFlags)
-            return if(this.isVisible) this else null
+            return if (this.isVisible) this else null
         }
 
         /**
@@ -135,7 +136,6 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
                 setTitle(title)
                 if (isLayout(PHONE or EMULATOR)) {
                     setNavigationIcon(R.drawable.ic_baseline_arrow_back_24)
-                    children.firstOrNull { it is ImageView }?.tag = getString(R.string.tv_no_focus_tag)
                     setNavigationOnClickListener {
                         safe { activity?.onBackPressedDispatcher?.onBackPressed() }
                     }
@@ -244,13 +244,33 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
             if (isLayout(TV)) {
                 settingsGeneral.requestFocus()
             }
+
+            // Bottom links (icons)
+            settingsGithub.setOnClickListener {
+                (activity ?: return@setOnClickListener).openBrowser(
+                    "https://github.com/recloudstream/cloudstream",
+                    isLayout(TV or EMULATOR),
+                    this@SettingsFragment
+                )
+            }
+
+            settingsDiscord.setOnClickListener {
+                (activity ?: return@setOnClickListener).openBrowser(
+                    "https://discord.gg/5Hus6fM",
+                    isLayout(TV or EMULATOR),
+                    this@SettingsFragment
+                )
+            }
         }
 
         val appVersion = BuildConfig.VERSION_NAME
         val commitInfo = getString(R.string.commit_hash)
-        val buildTimestamp = SimpleDateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG,
+        val buildTimestamp = SimpleDateFormat.getDateTimeInstance(
+            DateFormat.LONG,
+            DateFormat.LONG,
             Locale.getDefault()
-        ).apply { timeZone = TimeZone.getTimeZone("UTC")
+        ).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
         }.format(Date(BuildConfig.BUILD_DATE)).replace("UTC", "")
 
         binding.appVersion.text = appVersion
