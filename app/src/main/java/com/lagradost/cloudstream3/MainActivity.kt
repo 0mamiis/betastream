@@ -174,6 +174,7 @@ import com.lagradost.cloudstream3.utils.UIHelper.setNavigationBarColorCompat
 import com.lagradost.cloudstream3.utils.UIHelper.toPx
 import com.lagradost.cloudstream3.utils.USER_PROVIDER_API
 import com.lagradost.cloudstream3.utils.USER_SELECTED_HOMEPAGE_API
+import com.lagradost.cloudstream3.utils.downloader.DownloadQueueManager
 import com.lagradost.cloudstream3.utils.setText
 import com.lagradost.cloudstream3.utils.setTextHtml
 import com.lagradost.cloudstream3.utils.txt
@@ -188,14 +189,13 @@ import java.nio.charset.Charset
 import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.system.exitProcess
-import com.lagradost.cloudstream3.utils.downloader.DownloadQueueManager
 
 class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCallback {
     companion object {
         var activityResultLauncher: ActivityResultLauncher<Intent>? = null
 
         const val TAG = "MAINACT"
-        const val ANIMATED_OUTLINE: Boolean = false
+        var ANIMATED_OUTLINE: Boolean = false
         var lastError: String? = null
 
         /** Update lastError variable based on error file, to check if app crashed.
@@ -223,7 +223,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         private var filesToDelete: Set<String>
             // This needs to be persistent because the application may exit without calling onDestroy.
             get() = getKey<Set<String>>(FILE_DELETE_KEY) ?: setOf()
-            private set(value) = setKey(FILE_DELETE_KEY, value)
+            set(value) = setKey(FILE_DELETE_KEY, value)
 
         /**
          * Add file to delete on Exit.
@@ -387,7 +387,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                                 ""
                             )
                             return true
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             showToast("Invalid Uri", Toast.LENGTH_SHORT)
                             return false
                         }
@@ -557,7 +557,8 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
             navHostFragment.apply {
                 val marginPx = resources.getDimensionPixelSize(R.dimen.nav_rail_view_width)
                 layoutParams = (navHostFragment.layoutParams as ViewGroup.MarginLayoutParams).apply {
-                    marginStart = if (isNavVisible && isLandscape() && isLayout(TV or EMULATOR)) marginPx else 0
+                    marginStart =
+                        if (isNavVisible && isLandscape() && isLayout(TV or EMULATOR)) marginPx else 0
                 }
             }
 
@@ -567,7 +568,11 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
              * highlight the wrong one in UI.
              */
             when (destination.id) {
-                in listOf(R.id.navigation_downloads, R.id.navigation_download_child, R.id.navigation_download_queue) -> {
+                in listOf(
+                    R.id.navigation_downloads,
+                    R.id.navigation_download_child,
+                    R.id.navigation_download_queue
+                ) -> {
                     navRailView.menu.findItem(R.id.navigation_downloads).isChecked = true
                     navView.menu.findItem(R.id.navigation_downloads).isChecked = true
                 }
@@ -801,7 +806,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
 
 
     private val pluginsLock = Mutex()
-    private fun onAllPluginsLoaded(success: Boolean = false) {
+    private fun onAllPluginsLoaded(@Suppress("UNUSED_PARAMETER") success: Boolean = false) {
         ioSafe {
             pluginsLock.withLock {
                 synchronized(allProviders) {
@@ -970,7 +975,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
 
         /** if this is enabled it will keep the focus unmoving
          *  during listview move */
-        private const val NO_MOVE_LIST: Boolean = false
+        private var NO_MOVE_LIST: Boolean = false
 
         /** If this is enabled then it will try to move the
          * listview focus to the left instead of center */
@@ -981,7 +986,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                 RecyclerView::class.java.declaredMethods.firstOrNull {
                     it.name == "scrollStep"
                 }?.also { it.isAccessible = true }
-            } catch (t: Throwable) {
+            } catch (_: Throwable) {
                 null
             }
         }
@@ -1050,7 +1055,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                                             parent.smoothScrollBy(scrolledX, 0)
                                             if (NO_MOVE_LIST) targetDx = scrolledX
                                         }
-                                    } catch (t: Throwable) {
+                                    } catch (_: Throwable) {
                                         parent.smoothScrollBy(rdx, 0)
                                     }
                                 }
@@ -2061,7 +2066,7 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                 "https://raw.githubusercontent.com/recloudstream/.github/master/connectivitycheck",
                 timeout = 5
             ).text.trim() == "ok"
-        } catch (t: Throwable) {
+        } catch (_: Throwable) {
             false
         }
     }

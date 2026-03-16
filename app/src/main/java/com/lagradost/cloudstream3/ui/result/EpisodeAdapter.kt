@@ -34,7 +34,6 @@ import com.lagradost.cloudstream3.utils.downloader.DownloadObjects
 import com.lagradost.cloudstream3.utils.downloader.VideoDownloadManager
 import com.lagradost.cloudstream3.utils.setText
 import com.lagradost.cloudstream3.utils.txt
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,7 +62,8 @@ const val ACTION_DOWNLOAD_EPISODE_SUBTITLE_MIRROR = 14
 
 const val ACTION_MARK_AS_WATCHED = 18
 
-const val TV_EP_SIZE = 400
+// 400dp -> +10% ~= 440dp
+const val TV_EP_SIZE = 440
 const val ACTION_MARK_WATCHED_UP_TO_THIS_EPISODE = 19
 
 data class EpisodeClickEvent(val position: Int?, val action: Int, val data: ResultEpisode) {
@@ -139,6 +139,32 @@ class EpisodeAdapter(
         }
     }
 
+    private fun getRuntimeText(item: ResultEpisode): String {
+        // Prefer explicit episode runtime (MainAPI.Episode.runTime) - documented as seconds.
+        val runtimeMinutesFromRunTime = item.runTime?.takeIf { it > 0 }?.let { runtimeSeconds ->
+            // runTime is seconds
+            (runtimeSeconds + 59) / 60
+        }
+
+        // Fallback to playback duration (stored from player), in ms.
+        val runtimeMinutesFromDurationMs = item.duration.takeIf { it > 0L }?.let { durationMs ->
+            ((durationMs + 59_999L) / 60_000L).toInt()
+        }
+
+        // Final fallback as requested.
+        val runtimeMinutes = runtimeMinutesFromRunTime
+            ?: runtimeMinutesFromDurationMs
+            ?: 0
+
+        val hours = runtimeMinutes / 60
+        val mins = runtimeMinutes % 60
+        return when {
+            hours > 0 && mins > 0 -> "${hours}h ${mins}m"
+            hours > 0 -> "${hours}h"
+            else -> "${mins}m" // includes 0m
+        }
+    }
+
     override fun onBindContent(holder: ViewHolderState<Any>, item: ResultEpisode, position: Int) {
         val itemView = holder.itemView
         when (val binding = holder.view) {
@@ -204,16 +230,20 @@ class EpisodeAdapter(
 
                     val name =
                         if (item.name == null) "${episodeText.context.getString(R.string.episode)} ${item.episode}" else "${item.episode}. ${item.name}"
+                    val displayName = if (name.length > 15) "${name.take(13)}.." else name
                     episodeFiller.isVisible = item.isFiller == true
-                    episodeText.text =
-                        name//if(card.isFiller == true) episodeText.context.getString(R.string.filler).format(name) else name
-                    episodeText.isSelected = true // is needed for text repeating
+                    episodeText.text = displayName
+                    episodeText.isSelected = true
+
+                    val badgeText = when {
+                        item.season != null && item.episode != null -> "S${item.season}B${item.episode}"
+                        item.episode != null -> "B${item.episode}"
+                        else -> null
+                    }
+                    episodeSeasonBadge.text = badgeText.orEmpty()
+                    episodeSeasonBadge.isVisible = !badgeText.isNullOrBlank()
 
                     if (item.videoWatchState == VideoWatchState.Watched) {
-                        // This cannot be done in getDisplayPosition() as when you have not watched something
-                        // the duration and position is 0
-                        //episodeProgress.max = 1
-                        //episodeProgress.progress = 1
                         episodePlayIcon.setImageResource(R.drawable.ic_baseline_check_24)
                         episodeProgress.isVisible = false
                     } else {
@@ -240,19 +270,12 @@ class EpisodeAdapter(
                         episodePoster.loadImage(item.poster) {
                             if (isUpcoming) {
                                 error {
-                                    // If the poster has an url, but it is faulty then
-                                    // we use the episodeUpcomingIcon if it is an upcoming episode
-                                    main {
-                                        // Make sure it is on the main thread
-                                        episodeUpcomingIcon.isVisible = true
-                                    }
-
-                                    null // We only care about the runnable
+                                    main { episodeUpcomingIcon.isVisible = true }
+                                    null
                                 }
                             }
                         }
                     } else {
-                        // Clear the image
                         episodePoster.dispose()
                     }
                     episodePoster.isVisible = posterVisible
@@ -260,15 +283,28 @@ class EpisodeAdapter(
                     val rating10p = item.score?.toFloat(10)
                     if (rating10p != null && rating10p > 0.1) {
                         episodeRating.text = episodeRating.context?.getString(R.string.rated_format)
-                            ?.format(rating10p) // TODO Change rated_format to use card.score.toString()
+                            ?.format(rating10p)
                     } else {
                         episodeRating.text = ""
                     }
-
                     episodeRating.isGone = episodeRating.text.isNullOrBlank()
 
+                    // Runtime: always show (fallback 0m)
+                    val runtimeText = getRuntimeText(item)
+                    episodeRuntime.setText(txt(runtimeText))
+                    episodeRuntime.isVisible = true
+                    episodeTimeIcon.isVisible = true
+
+                    val descriptionText = item.description?.let { description ->
+                        if (description.length > 60) {
+                            description.take(57) + "..."
+                        } else {
+                            description
+                        }
+                    }
+
                     episodeDescript.apply {
-                        text = item.description.html()
+                        text = descriptionText.html()
                         isGone = text.isNullOrBlank()
 
                         var isExpanded = false
@@ -283,14 +319,14 @@ class EpisodeAdapter(
                                 )
                             } else {
                                 isExpanded = !isExpanded
-                                maxLines = if (isExpanded) {
-                                    Integer.MAX_VALUE
-                                } else 4
+                                maxLines = if (isExpanded) Integer.MAX_VALUE else 4
                             }
                         }
                     }
 
+                    // Date: show if available
                     if (item.airDate != null) {
+                        episodeDate.isVisible = true
                         val isUpcoming = unixTimeMS < item.airDate
 
                         if (isUpcoming) {
@@ -310,25 +346,21 @@ class EpisodeAdapter(
                             episodePlayIcon.isVisible = true
                             episodeUpcomingIcon.isVisible = false
 
-                            val formattedAirDate = SimpleDateFormat.getDateInstance(
-                                DateFormat.LONG,
+                            val formattedAirDate = SimpleDateFormat(
+                                "dd MMM yyyy",
                                 Locale.getDefault()
-                            ).apply {
-                            }.format(Date(item.airDate))
+                            ).format(Date(item.airDate))
 
                             episodeDate.setText(txt(formattedAirDate))
                         }
                     } else {
                         episodeUpcomingIcon.isVisible = false
                         episodePlayIcon.isVisible = true
+                        episodeDate.setText(txt(""))
                         episodeDate.isVisible = false
                     }
 
-                    episodeRuntime.setText(
-                        txt(
-                            item.runTime?.times(60L)?.toInt()?.let { secondsToReadable(it, "") }
-                        )
-                    )
+                    episodeTimeRow.isGone = false
 
                     if (isLayout(EMULATOR or PHONE)) {
                         episodePoster.setOnClickListener {
@@ -361,7 +393,6 @@ class EpisodeAdapter(
                 if (isLayout(TV)) {
                     itemView.isFocusable = true
                     itemView.isFocusableInTouchMode = true
-                    //itemView.touchscreenBlocksFocus = false
                 }
 
                 itemView.setOnLongClickListener {
@@ -425,10 +456,10 @@ class EpisodeAdapter(
 
                     val name =
                         if (item.name == null) "${episodeText.context.getString(R.string.episode)} ${item.episode}" else "${item.episode}. ${item.name}"
+                    val displayName = if (name.length > 15) "${name.take(13)}.." else name
                     episodeFiller.isVisible = item.isFiller == true
-                    episodeText.text =
-                        name//if(card.isFiller == true) episodeText.context.getString(R.string.filler).format(name) else name
-                    episodeText.isSelected = true // is needed for text repeating
+                    episodeText.text = displayName
+                    episodeText.isSelected = true
 
                     if (item.videoWatchState == VideoWatchState.Watched) {
                         episodePlayIcon.setImageResource(R.drawable.ic_baseline_check_24)
@@ -451,6 +482,40 @@ class EpisodeAdapter(
                         }
                     }
 
+                    // Runtime: always show (fallback 0m)
+                    val runtimeText = getRuntimeText(item)
+                    episodeRuntime.setText(txt(runtimeText))
+                    episodeRuntime.isVisible = true
+                    episodeTimeIcon.isVisible = true
+
+                    // Date: show if available
+                    if (item.airDate != null) {
+                        episodeDate.isVisible = true
+                        val isUpcoming = unixTimeMS < item.airDate
+                        if (isUpcoming) {
+                            episodeDate.setText(
+                                txt(
+                                    R.string.episode_upcoming_format,
+                                    secondsToReadable(
+                                        item.airDate.minus(unixTimeMS).div(1000).toInt(),
+                                        ""
+                                    )
+                                )
+                            )
+                        } else {
+                            val formattedAirDate = SimpleDateFormat(
+                                "dd MMM yyyy",
+                                Locale.getDefault()
+                            ).format(Date(item.airDate))
+                            episodeDate.setText(txt(formattedAirDate))
+                        }
+                    } else {
+                        episodeDate.setText(txt(""))
+                        episodeDate.isVisible = false
+                    }
+
+                    episodeTimeRow.isGone = false
+
                     itemView.setOnClickListener {
                         clickCallback.invoke(
                             EpisodeClickEvent(
@@ -464,16 +529,12 @@ class EpisodeAdapter(
                     if (isLayout(TV)) {
                         itemView.isFocusable = true
                         itemView.isFocusableInTouchMode = true
-                        //itemView.touchscreenBlocksFocus = false
                     }
 
                     itemView.setOnLongClickListener {
                         clickCallback.invoke(EpisodeClickEvent(position, ACTION_SHOW_OPTIONS, item))
                         return@setOnLongClickListener true
                     }
-
-                    //binding.resultEpisodeDownload.isVisible = hasDownloadSupport
-                    //binding.resultEpisodeProgressDownloaded.isVisible = hasDownloadSupport
                 }
             }
         }

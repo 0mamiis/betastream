@@ -872,7 +872,7 @@
                                     android:paddingBottom="10dp"
                                     android:textColor="?attr/textColor"
                                     android:textSize="17sp"
-                                    android:textStyle="normal"
+                                    android:textStyle="bold"
                                     tools:text="8 Episodes" />
                             </com.lagradost.cloudstream3.widget.FlowLayout>
 
