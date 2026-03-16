@@ -18,170 +18,177 @@
         android:layout_height="match_parent"
         android:background="@drawable/episode_card_divider">
 
-        <LinearLayout
-            android:id="@+id/episode_holder"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/episode_lin_holder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:foreground="?android:attr/selectableItemBackgroundBorderless"
-            android:orientation="vertical">
+            android:foreground="?android:attr/selectableItemBackgroundBorderless">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/episode_lin_holder"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+            <androidx.cardview.widget.CardView
+                android:id="@+id/episode_poster_card"
+                android:layout_width="110dp"
+                android:layout_height="100dp"
+                android:foreground="@drawable/outline_drawable"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
-                <androidx.cardview.widget.CardView
-                    android:id="@+id/episode_poster_card"
-                    android:layout_width="110dp"
-                    android:layout_height="100dp"
-                    android:foreground="@drawable/outline_drawable"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
+                <ImageView
+                    android:id="@+id/episode_poster"
+                    android:layout_width="187dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:scaleType="centerCrop"
+                    tools:src="@drawable/example_poster" />
 
-                    <ImageView
-                        android:id="@+id/episode_poster"
-                        android:layout_width="187dp"
-                        android:layout_height="match_parent"
-                        android:layout_gravity="center"
-                        android:scaleType="centerCrop"
-                        tools:src="@drawable/example_poster" />
+                <ImageView
+                    android:id="@+id/episode_upcoming_icon"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/hourglass_24"
+                    android:visibility="gone" />
 
-                    <ImageView
-                        android:id="@+id/episode_upcoming_icon"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/hourglass_24"
-                        android:visibility="gone" />
+                <FrameLayout
+                    android:id="@+id/watch_progress_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center">
 
-                    <FrameLayout
-                        android:id="@+id/watch_progress_container"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center">
-                        <com.google.android.material.imageview.ShapeableImageView
-                            android:id="@+id/episode_play_icon"
-                            style="@style/EpisodePlayUnderlayProgress" />
-                        <com.google.android.material.progressindicator.CircularProgressIndicator
-                            android:id="@+id/episode_progress"
-                            style="@style/EpisodeCircularProgress" />
-                    </FrameLayout>
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/episode_play_icon"
+                        style="@style/EpisodePlayUnderlayProgress" />
 
-                    <TextView
-                        android:id="@+id/episode_season_badge"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="bottom|end"
-                        android:layout_marginEnd="7dp"
-                        android:layout_marginBottom="7dp"
-                        android:background="@drawable/episode_badge_bg"
-                        android:paddingHorizontal="4dp"
-                        android:scaleX="0.9"
-                        android:scaleY="0.9"
-                        android:textColor="@android:color/white"
-                        android:textSize="12sp"
-                        tools:text="S4B41" />
-                </androidx.cardview.widget.CardView>
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/episode_progress"
+                        style="@style/EpisodeCircularProgress" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/episode_season_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="7dp"
+                    android:layout_marginBottom="7dp"
+                    android:background="@drawable/episode_badge_bg"
+                    android:paddingHorizontal="4dp"
+                    android:scaleX="0.9"
+                    android:scaleY="0.9"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp"
+                    tools:text="S4B41" />
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:id="@+id/episode_content"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:orientation="vertical"
+                android:paddingStart="10dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="7dp"
+                android:paddingBottom="8dp"
+                app:layout_constraintBottom_toTopOf="@id/episode_time_row"
+                app:layout_constraintEnd_toStartOf="@id/download_button"
+                app:layout_constraintStart_toEndOf="@id/episode_poster_card"
+                app:layout_constraintTop_toTopOf="parent">
 
                 <LinearLayout
-                    android:id="@+id/episode_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/episode_filler"
+                        style="@style/SmallWhiteButton"
+                        android:layout_marginEnd="11dp"
+                        android:minHeight="48dp"
+                        android:minWidth="48dp" />
+
+                    <TextView
+                        android:id="@+id/episode_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/textColor"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/episode_rating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/grayTextColor"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/episode_descript"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textColor="?attr/grayTextColor"
+                    android:textSize="13sp" />
+
+                <View
                     android:layout_width="0dp"
                     android:layout_height="0dp"
-                    android:orientation="vertical"
-                    android:paddingStart="14dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="7dp"
-                    android:paddingBottom="8dp"
-                    app:layout_constraintBottom_toTopOf="@id/episode_time_row"
-                    app:layout_constraintEnd_toStartOf="@id/download_button"
-                    app:layout_constraintStart_toEndOf="@id/episode_poster_card"
-                    app:layout_constraintTop_toTopOf="parent">
+                    android:layout_weight="1" />
+            </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content">
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/episode_filler"
-                            style="@style/SmallWhiteButton"
-                            android:layout_marginEnd="11dp" />
-                        <TextView
-                            android:id="@+id/episode_text"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textColor="?attr/textColor"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
+            <LinearLayout
+                android:id="@+id/episode_time_row"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="10dp"
+                android:paddingEnd="7dp"
+                android:paddingBottom="7dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/download_button"
+                app:layout_constraintStart_toEndOf="@id/episode_poster_card">
 
-                    <TextView
-                        android:id="@+id/episode_rating"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="?attr/grayTextColor"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/episode_descript"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:ellipsize="end"
-                        android:maxLines="2"
-                        android:textColor="?attr/grayTextColor"
-                        android:textSize="13sp" />
-
-                    <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/episode_time_row"
-                    android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/episode_date"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="7dp"
-                    android:paddingBottom="7dp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toStartOf="@id/download_button"
-                    app:layout_constraintStart_toEndOf="@id/episode_poster_card">
+                    android:textColor="?attr/grayTextColor"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/episode_date"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="?attr/grayTextColor"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                <ImageView
+                    android:id="@+id/episode_time_icon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="9dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_baseline_access_time_24"
+                    app:tint="?attr/grayTextColor" />
 
-                    <ImageView
-                        android:id="@+id/episode_time_icon"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginStart="9dp"
-                        app:tint="?attr/grayTextColor"
-                        android:src="@drawable/ic_baseline_access_time_24" />
+                <TextView
+                    android:id="@+id/episode_runtime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:textColor="?attr/grayTextColor"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/episode_runtime"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:textColor="?attr/grayTextColor"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+            <com.lagradost.cloudstream3.ui.download.button.PieFetchButton
+                android:id="@+id/download_button"
+                android:layout_width="53dp"
+                android:layout_height="53dp"
+                android:padding="11dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-                <com.lagradost.cloudstream3.ui.download.button.PieFetchButton
-                    android:id="@+id/download_button"
-                    android:layout_width="53dp"
-                    android:layout_height="53dp"
-                    android:padding="11dp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
     </FrameLayout>
 </androidx.cardview.widget.CardView>

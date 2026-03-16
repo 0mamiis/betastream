@@ -57,7 +57,6 @@ const val ACTION_CLICK_DEFAULT = 11
 const val ACTION_SHOW_TOAST = 12
 const val ACTION_SHOW_DESCRIPTION = 15
 
-const val ACTION_DOWNLOAD_EPISODE_SUBTITLE = 13
 const val ACTION_DOWNLOAD_EPISODE_SUBTITLE_MIRROR = 14
 
 const val ACTION_MARK_AS_WATCHED = 18
@@ -248,8 +247,6 @@ class EpisodeAdapter(
                         episodeProgress.isVisible = false
                     } else {
                         val displayPos = item.getDisplayPosition()
-                        val durationSec = (item.duration / 1000).toInt()
-                        val progressSec = (displayPos / 1000).toInt()
 
                         if (displayPos >= item.duration && displayPos > 0) {
                             episodePlayIcon.setImageResource(R.drawable.ic_baseline_check_24)
@@ -257,8 +254,8 @@ class EpisodeAdapter(
                         } else {
                             episodePlayIcon.setImageResource(R.drawable.netflix_play)
                             episodeProgress.apply {
-                                max = durationSec
-                                progress = progressSec
+                                max = (item.duration / 1000).toInt()
+                                progress = (displayPos / 1000).toInt()
                                 isVisible = displayPos > 0L
                             }
                         }
@@ -466,8 +463,6 @@ class EpisodeAdapter(
                         episodeProgress.isVisible = false
                     } else {
                         val displayPos = item.getDisplayPosition()
-                        val durationSec = (item.duration / 1000).toInt()
-                        val progressSec = (displayPos / 1000).toInt()
 
                         if (displayPos >= item.duration && displayPos > 0) {
                             episodePlayIcon.setImageResource(R.drawable.ic_baseline_check_24)
@@ -475,8 +470,8 @@ class EpisodeAdapter(
                         } else {
                             episodePlayIcon.setImageResource(R.drawable.play_button_transparent)
                             episodeProgress.apply {
-                                max = durationSec
-                                progress = progressSec
+                                max = (item.duration / 1000).toInt()
+                                progress = (displayPos / 1000).toInt()
                                 isVisible = displayPos > 0L
                             }
                         }
