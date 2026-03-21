@@ -6,7 +6,7 @@
     android:id="@+id/download_queue_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/primaryBlackBackground">
+    android:background="@drawable/bg_modern_screen">
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
@@ -16,14 +16,19 @@
         <com.google.android.material.appbar.AppBarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent">
+            android:background="@android:color/transparent"
+            android:paddingStart="10dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="10dp">
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/download_queue_toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="?attr/primaryGrayBackground"
+                android:background="@drawable/bg_settings_feature_panel"
                 android:paddingTop="@dimen/navbar_height"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
                 app:layout_scrollFlags="scroll|enterAlways"
                 app:menu="@menu/download_queue"
                 app:navigationIconTint="?attr/iconColor"
@@ -42,9 +47,13 @@
                 android:id="@+id/download_queue_list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="@android:color/transparent"
                 android:nextFocusLeft="@id/navigation_downloads"
                 android:nextFocusUp="@id/download_queue_toolbar"
-                android:padding="10dp"
+                android:paddingStart="10dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="18dp"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/download_queue_item" />
 
@@ -57,8 +66,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:background="@drawable/bg_popup_panel"
         android:gravity="center"
+        android:padding="16dp"
         android:text="@string/queue_empty_message"
+        android:textColor="?attr/textColor"
         android:visibility="visible" />
 
 </FrameLayout>

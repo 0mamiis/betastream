@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.view.View
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.cardview.widget.CardView
@@ -14,24 +15,184 @@ import androidx.preference.PreferenceManager
 import com.lagradost.cloudstream3.AnimeSearchResponse
 import com.lagradost.cloudstream3.DubStatus
 import com.lagradost.cloudstream3.LiveSearchResponse
+import com.lagradost.cloudstream3.LoadResponse.Companion.readIdFromString
 import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.SearchQuality
 import com.lagradost.cloudstream3.SearchResponse
+import com.lagradost.cloudstream3.SimklSyncServices
+import com.lagradost.cloudstream3.TvSeriesSearchResponse
+import com.lagradost.cloudstream3.LoadResponse
+import com.lagradost.cloudstream3.MovieSearchResponse
+import com.lagradost.cloudstream3.Score
+import com.lagradost.cloudstream3.isEpisodeBased
 import com.lagradost.cloudstream3.isMovieType
 import com.lagradost.cloudstream3.syncproviders.SyncAPI
+import com.lagradost.cloudstream3.ui.common.ImdbRatingVisuals
+import com.lagradost.cloudstream3.ui.result.ImdbRatingData
+import com.lagradost.cloudstream3.ui.result.ImdbTitleRatingApi
 import com.lagradost.cloudstream3.ui.settings.Globals.TV
 import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 import com.lagradost.cloudstream3.utils.AppContextUtils.getNameFull
 import com.lagradost.cloudstream3.utils.AppContextUtils.getShortSeasonText
+import com.lagradost.cloudstream3.utils.Coroutines.ioSafe
 import com.lagradost.cloudstream3.utils.DataStoreHelper
 import com.lagradost.cloudstream3.utils.DataStoreHelper.fixVisual
 import com.lagradost.cloudstream3.utils.ImageLoader.loadImage
 import com.lagradost.cloudstream3.utils.SubtitleHelper
 import com.lagradost.cloudstream3.utils.UIHelper.colorFromAttribute
 import com.lagradost.cloudstream3.utils.getImageFromDrawable
+import java.util.concurrent.ConcurrentHashMap
 
 object SearchResultBuilder {
     private val showCache: MutableMap<String, Boolean> = mutableMapOf()
+    private val imdbRatingCache = ConcurrentHashMap<String, CachedImdbRating>()
+
+    private sealed class CachedImdbRating {
+        data class Value(val text: String) : CachedImdbRating()
+        object Missing : CachedImdbRating()
+    }
+
+    private data class ImdbCardLookup(
+        val imdbId: String?,
+        val titleCandidates: List<String>,
+        val year: Int?,
+        val isEpisodeBased: Boolean,
+    ) {
+        fun cacheKey(): String {
+            return buildString {
+                append(imdbId ?: "")
+                append('|')
+                append(titleCandidates.joinToString("|"))
+                append('|')
+                append(year ?: "")
+                append('|')
+                append(isEpisodeBased)
+            }
+        }
+    }
+
+    private fun SearchResponse.providerRatingText(): String? {
+        return score?.toStringNull(0.1, 10, 1, false, '.')
+    }
+
+    private fun SearchResponse.toImdbCardLookup(): ImdbCardLookup {
+        val titleCandidates = buildList {
+            add(name)
+            if (this@toImdbCardLookup is AnimeSearchResponse) {
+                otherName?.takeIf { it.isNotBlank() }?.let(::add)
+            }
+        }.distinct()
+        val year = when (this) {
+            is AnimeSearchResponse -> year
+            is MovieSearchResponse -> year
+            is TvSeriesSearchResponse -> year
+            is DataStoreHelper.LibrarySearchResponse -> year
+            else -> null
+        }
+        val imdbId = when (this) {
+            is DataStoreHelper.LibrarySearchResponse -> getImdbIdFromSyncData(syncData)
+            else -> null
+        }
+        return ImdbCardLookup(
+            imdbId = imdbId,
+            titleCandidates = titleCandidates,
+            year = year,
+            isEpisodeBased = type.isEpisodeBased(),
+        )
+    }
+
+    private fun getImdbIdFromSyncData(syncData: Map<String, String>?): String? {
+        val imdbId = readIdFromString(
+            syncData?.get(LoadResponse.simklIdPrefix)
+        )[SimklSyncServices.Imdb]
+        return imdbId?.takeUnless { it.isBlank() || it == "null" }
+    }
+
+    private fun hideRating(
+        holder: LinearLayout?,
+        ratingView: TextView?,
+    ) {
+        holder?.isVisible = false
+        ratingView?.text = ""
+    }
+
+    private fun showRating(
+        holder: LinearLayout?,
+        iconView: ImageView?,
+        ratingView: TextView?,
+        text: String,
+    ) {
+        ratingView?.text = text
+        ImdbRatingVisuals.apply(iconView, ratingView, text)
+        holder?.isVisible = true
+    }
+
+    private fun bindImdbCardRating(
+        itemView: View,
+        card: SearchResponse,
+        showRatingView: Boolean,
+        holder: LinearLayout?,
+        iconView: ImageView?,
+        ratingView: TextView?,
+    ) {
+        val shouldShowRating = showRatingView || card is SyncAPI.LibraryItem
+        if (!shouldShowRating || holder == null || ratingView == null) {
+            hideRating(holder, ratingView)
+            return
+        }
+
+        val providerRatingText = card.providerRatingText()
+        if (!providerRatingText.isNullOrBlank()) {
+            itemView.setTag(R.id.imdb_rating_holder, null)
+            showRating(holder, iconView, ratingView, providerRatingText)
+            return
+        }
+
+        val lookup = card.toImdbCardLookup()
+        val cacheKey = lookup.cacheKey()
+        val requestKey = "${card.url}|$cacheKey"
+        itemView.setTag(R.id.imdb_rating_holder, requestKey)
+
+        when (val cached = imdbRatingCache[cacheKey]) {
+            is CachedImdbRating.Value -> {
+                showRating(holder, iconView, ratingView, cached.text)
+                return
+            }
+
+            CachedImdbRating.Missing -> {
+                hideRating(holder, ratingView)
+                return
+            }
+
+            null -> {
+                hideRating(holder, ratingView)
+            }
+        }
+
+        lookup.ioSafe { lookupData ->
+            val imdbRating = ImdbTitleRatingApi.getTitleRating(
+                imdbId = lookupData.imdbId,
+                titleCandidates = lookupData.titleCandidates,
+                year = lookupData.year,
+                isEpisodeBased = lookupData.isEpisodeBased,
+            )
+            val ratingText = imdbRating.toCardRatingText()
+            imdbRatingCache[cacheKey] = ratingText?.let(CachedImdbRating::Value) ?: CachedImdbRating.Missing
+
+            itemView.post {
+                if (itemView.getTag(R.id.imdb_rating_holder) != requestKey) return@post
+                if (ratingText.isNullOrBlank()) {
+                    hideRating(holder, ratingView)
+                } else {
+                    showRating(holder, iconView, ratingView, ratingText)
+                }
+            }
+        }
+    }
+
+    private fun ImdbRatingData?.toCardRatingText(): String? {
+        return this?.aggregateRating?.let { Score.from10(it)?.toStringNull(0.1, 10, 1, false, '.') }
+    }
 
     fun updateCache(context: Context?) {
         if (context == null) return
@@ -58,6 +219,8 @@ object SearchResultBuilder {
         val textIsDub: TextView? = itemView.findViewById(R.id.text_is_dub)
         val textIsSub: TextView? = itemView.findViewById(R.id.text_is_sub)
         val textFlag: TextView? = itemView.findViewById(R.id.text_flag)
+        val ratingHolder: LinearLayout? = itemView.findViewById(R.id.imdb_rating_holder)
+        val ratingIcon: ImageView? = itemView.findViewById(R.id.imdb_rating_icon)
         val rating: TextView? = itemView.findViewById(R.id.text_rating)
 
         val textQuality: TextView? = itemView.findViewById(R.id.text_quality)
@@ -76,7 +239,7 @@ object SearchResultBuilder {
         textIsDub?.isVisible = false
         textIsSub?.isVisible = false
         textFlag?.isVisible = false
-        rating?.isVisible = false
+        hideRating(ratingHolder, rating)
         episodeText?.isVisible = false
 
         val showSub = showCache[textIsDub?.context?.getString(R.string.show_sub_key)] ?: false
@@ -86,21 +249,7 @@ object SearchResultBuilder {
         val showHd = showCache[textQuality?.context?.getString(R.string.show_hd_key)] ?: false
         val showRatingView =
             showCache[textQuality?.context?.getString(R.string.show_rating_key)] ?: false
-        if (card is SyncAPI.LibraryItem) {
-            val ratingText = card.personalRating?.toStringNull(0.1, 10, 1)
-            val showRating = !ratingText.isNullOrBlank()
-            rating?.isVisible = showRating
-            if (showRating) {
-                rating?.text = ratingText
-            }
-        } else if (showRatingView) {
-            val ratingText = card.score?.toStringNull(0.1, 10, 1)
-            val showRating = !ratingText.isNullOrBlank()
-            rating?.isVisible = showRating
-            if (showRating) {
-                rating?.text = ratingText
-            }
-        }
+        bindImdbCardRating(itemView, card, showRatingView, ratingHolder, ratingIcon, rating)
 
         shadow?.isVisible = showTitle
 
@@ -308,8 +457,8 @@ object SearchResultBuilder {
         // then a large if statement
 
         // Requires that the ordering here is the same as in the xml
-        val boxes = arrayListOf<TextView>()
-        for (view in arrayOf(textIsDub, textIsSub, rating)) {
+        val boxes = arrayListOf<View>()
+        for (view in arrayOf(textIsDub, textIsSub)) {
             if (view?.isVisible == true) {
                 boxes.add(view)
             }

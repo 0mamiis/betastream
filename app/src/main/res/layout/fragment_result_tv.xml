@@ -23,14 +23,14 @@ https://developer.android.com/design/ui/tv/samples/jet-fit
     <FrameLayout
         android:id="@+id/background_poster_holder"
         android:layout_width="match_parent"
-        android:layout_height="275dp"
+        android:layout_height="440dp"
         android:visibility="visible">
 
 
         <com.lagradost.cloudstream3.utils.PercentageCropImageView
             android:id="@+id/background_poster"
             android:layout_width="match_parent"
-            android:layout_height="275dp"
+            android:layout_height="440dp"
             android:layout_gravity="center"
             android:alpha="0.8"
             android:scaleType="matrix"
@@ -40,21 +40,20 @@ https://developer.android.com/design/ui/tv/samples/jet-fit
         <ImageView
             android:layout_marginBottom="-1dp"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
+            android:layout_height="180dp"
             android:layout_gravity="bottom"
             android:src="@drawable/background_shadow" />
 
         <ImageView
             android:id="@+id/background_poster_watermark_badge_holder"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:maxWidth="220dp"
-            android:maxHeight="72dp"
-            android:layout_gravity="bottom|start"
-            android:layout_marginStart="@dimen/result_padding"
+            android:layout_width="match_parent"
+            android:layout_height="128dp"
+            android:layout_gravity="bottom|center_horizontal"
             android:layout_marginBottom="56dp"
+            android:paddingStart="28dp"
+            android:paddingEnd="28dp"
             android:adjustViewBounds="true"
-            android:scaleType="fitStart"
+            android:scaleType="fitCenter"
             android:contentDescription="@null" />
 
     </FrameLayout>
@@ -81,9 +80,11 @@ https://developer.android.com/design/ui/tv/samples/jet-fit
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginBottom="@dimen/loading_margin"
-                android:orientation="horizontal">
+                android:background="@drawable/bg_popup_panel"
+                android:orientation="horizontal"
+                android:padding="10dp">
 
-                <include layout="@layout/loading_poster" />
+                <include layout="@layout/loading_result_poster" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -92,15 +93,15 @@ https://developer.android.com/design/ui/tv/samples/jet-fit
                     android:layout_marginEnd="@dimen/loading_margin"
                     android:orientation="vertical">
 
-                    <include layout="@layout/loading_line" />
+                    <include layout="@layout/loading_result_line" />
 
-                    <include layout="@layout/loading_line" />
+                    <include layout="@layout/loading_result_line" />
 
-                    <include layout="@layout/loading_line" />
+                    <include layout="@layout/loading_result_line" />
 
-                    <include layout="@layout/loading_line" />
+                    <include layout="@layout/loading_result_line" />
 
-                    <include layout="@layout/loading_line_short" />
+                    <include layout="@layout/loading_result_line_short" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -109,11 +110,11 @@ https://developer.android.com/design/ui/tv/samples/jet-fit
                 android:layout_height="20dp"
                 tools:ignore="ContentDescription" />
 
-            <include layout="@layout/loading_episode" />
+            <include layout="@layout/loading_result_episode" />
 
-            <include layout="@layout/loading_episode" />
+            <include layout="@layout/loading_result_episode" />
 
-            <include layout="@layout/loading_episode" />
+            <include layout="@layout/loading_result_episode" />
         </LinearLayout>
     </com.facebook.shimmer.ShimmerFrameLayout>
 
@@ -178,7 +179,7 @@ https://developer.android.com/design/ui/tv/samples/jet-fit
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="225dp"
+                android:layout_marginTop="360dp"
                 android:orientation="vertical">
 
                 <TextView
@@ -582,21 +583,60 @@ https://developer.android.com/design/ui/tv/samples/jet-fit
                         <TextView
                             android:id="@+id/result_meta_type"
                             style="@style/ResultInfoText"
+                            android:textStyle="bold"
                             tools:text="Movie" />
 
                         <TextView
                             android:id="@+id/result_meta_year"
                             style="@style/ResultInfoText"
+                            android:textStyle="bold"
                             tools:text="2022" />
 
-                        <TextView
-                            android:id="@+id/result_meta_rating"
-                            style="@style/ResultInfoText"
-                            tools:text="Rated: 8.5/10.0" />
+                        <LinearLayout
+                            android:id="@+id/result_meta_imdb"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:orientation="vertical">
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <androidx.appcompat.widget.AppCompatImageView
+                                    android:id="@+id/result_meta_rating_icon"
+                                    android:layout_width="32dp"
+                                    android:layout_height="16dp"
+                                    android:layout_marginEnd="5dp"
+                                    android:adjustViewBounds="true"
+                                    android:contentDescription="@null"
+                                    app:srcCompat="@drawable/imdb_logo" />
+
+                                <TextView
+                                    android:id="@+id/result_meta_rating"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="#F5C518"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    tools:text="8.5" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/result_meta_rating_votes"
+                                style="@style/ResultInfoText"
+                                android:gravity="start"
+                                android:minHeight="0dp"
+                                android:textSize="8.4sp"
+                                tools:text="2.58M" />
+                        </LinearLayout>
 
                         <TextView
                             android:id="@+id/result_meta_status"
                             style="@style/ResultInfoText"
+                            android:textStyle="bold"
                             tools:text="Ongoing" />
 
                         <TextView
@@ -922,6 +962,21 @@ https://developer.android.com/design/ui/tv/samples/jet-fit
                                 android:foreground="@drawable/outline_drawable"
                                 android:scaleType="centerCrop"
                                 tools:src="@drawable/example_poster" />
+
+                            <ImageView
+                                android:id="@+id/result_poster_logo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="bottom|center_horizontal"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:layout_marginBottom="8dp"
+                                android:adjustViewBounds="true"
+                                android:contentDescription="@null"
+                                android:maxWidth="84dp"
+                                android:maxHeight="40dp"
+                                android:scaleType="fitCenter"
+                                android:visibility="gone" />
                         </androidx.cardview.widget.CardView>
 
                         <!--
@@ -951,14 +1006,51 @@ https://developer.android.com/design/ui/tv/samples/jet-fit
                                     style="@style/ResultInfoText"
                                     tools:text="2022" />
 
-                                <TextView
-                                    android:id="@+id/result_meta_rating"
-                                    style="@style/ResultInfoText"
-                                    tools:text="Rated: 8.5/10.0" />
+                                <LinearLayout
+                                    android:id="@+id/result_meta_imdb"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center_vertical"
+                                    android:orientation="vertical">
+
+                                    <LinearLayout
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
+
+                                        <androidx.appcompat.widget.AppCompatImageView
+                                            android:id="@+id/result_meta_rating_icon"
+                                            android:layout_width="32dp"
+                                            android:layout_height="16dp"
+                                            android:layout_marginEnd="5dp"
+                                            android:adjustViewBounds="true"
+                                            android:contentDescription="@null"
+                                            app:srcCompat="@drawable/imdb_logo" />
+
+                                        <TextView
+                                            android:id="@+id/result_meta_rating"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:textColor="#F5C518"
+                                            android:textSize="16sp"
+                                            android:textStyle="bold"
+                                            tools:text="8.5" />
+                                    </LinearLayout>
+
+                                    <TextView
+                                        android:id="@+id/result_meta_rating_votes"
+                                        style="@style/ResultInfoText"
+                                        android:gravity="start"
+                                        android:minHeight="0dp"
+                                        android:textSize="8.4sp"
+                                        tools:text="2.58M" />
+                                </LinearLayout>
 
                                 <TextView
                                     android:id="@+id/result_meta_status"
                                     style="@style/ResultInfoText"
+                                    android:visibility="gone"
                                     tools:text="Ongoing" />
 
                                 <TextView

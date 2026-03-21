@@ -2,9 +2,13 @@ package com.lagradost.cloudstream3.utils
 
 import android.app.Activity
 import android.app.Dialog
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.text.Spanned
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.AbsListView
 import android.widget.ArrayAdapter
 import android.widget.LinearLayout
@@ -105,7 +109,9 @@ object SingleSelectionHelper {
         isMultiSelect: Boolean,
         callback: (List<Int>) -> Unit,
         dismissCallback: () -> Unit,
-        itemLayout: Int = R.layout.sort_bottom_single_choice
+        itemLayout: Int = R.layout.sort_bottom_single_choice,
+        itemColors: List<Int>? = null,
+        itemColorPalettes: List<List<Int>>? = null
     ) {
         if (this == null) return
 
@@ -131,8 +137,40 @@ object SingleSelectionHelper {
         textView.text = name
         textView.isGone = name.isBlank()
 
-        val arrayAdapter = ArrayAdapter<String>(this, itemLayout)
-        arrayAdapter.addAll(items)
+        val arrayAdapter: ArrayAdapter<String> =
+            if ((itemColors != null || itemColorPalettes != null) &&
+                itemLayout == R.layout.sort_bottom_single_choice_color
+            ) {
+                object : ArrayAdapter<String>(this, itemLayout, android.R.id.text1, items) {
+                    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                        val view = super.getView(position, convertView, parent)
+                        val singleColor = itemColors?.getOrNull(position)
+                        val palette = itemColorPalettes?.getOrNull(position) ?: listOfNotNull(singleColor)
+                        val dot1 = palette.getOrNull(0)
+                        val dot2 = palette.getOrNull(1)
+                        val dot3 = palette.getOrNull(2)
+
+                        fun bindDot(dotId: Int, color: Int?) {
+                            val dotView = view.findViewById<View>(dotId) ?: return
+                            if (color == null) {
+                                dotView.visibility = View.GONE
+                            } else {
+                                dotView.visibility = View.VISIBLE
+                                dotView.backgroundTintList = ColorStateList.valueOf(color)
+                            }
+                        }
+
+                        bindDot(R.id.theme_color_dot_1, dot1)
+                        bindDot(R.id.theme_color_dot_2, dot2)
+                        bindDot(R.id.theme_color_dot_3, dot3)
+                        return view
+                    }
+                }
+            } else {
+                ArrayAdapter<String>(this, itemLayout, android.R.id.text1).apply {
+                    addAll(items)
+                }
+            }
 
         listView.adapter = arrayAdapter
         if (isMultiSelect) {
@@ -162,8 +200,8 @@ object SingleSelectionHelper {
                     listView.setItemChecked(which, true)
                 }
             } else {
-                callback.invoke(listOf(which))
                 dialog.dismissSafe(this)
+                callback.invoke(listOf(which))
             }
         }
         if (realShowApply) {
@@ -173,8 +211,8 @@ object SingleSelectionHelper {
                     if (listView.checkedItemPositions[index])
                         list.add(index)
                 }
-                callback.invoke(list)
                 dialog.dismissSafe(this)
+                callback.invoke(list)
             }
             cancelButton.setOnClickListener {
                 dialog.dismissSafe(this)
@@ -209,8 +247,8 @@ object SingleSelectionHelper {
 
 
         applyButton.setOnClickListener {
-            callback.invoke(inputView.text.toString())  // try to save the setting, using callback
             dialog.dismissSafe(this)
+            callback.invoke(inputView.text.toString())  // try to save the setting, using callback
         }
 
         cancelButton.setOnClickListener {  // just dismiss
@@ -260,7 +298,31 @@ object SingleSelectionHelper {
         name: String,
         showApply: Boolean,
         dismissCallback: () -> Unit,
-        callback: (Int) -> Unit,
+        callback: (Int) -> Unit
+    ) {
+        showDialog(
+            items = items,
+            selectedIndex = selectedIndex,
+            name = name,
+            showApply = showApply,
+            dismissCallback = dismissCallback,
+            itemLayout = R.layout.sort_bottom_single_choice,
+            itemColors = null,
+            itemColorPalettes = null,
+            callback = callback
+        )
+    }
+
+    fun Activity?.showDialog(
+        items: List<String>,
+        selectedIndex: Int,
+        name: String,
+        showApply: Boolean,
+        dismissCallback: () -> Unit,
+        itemLayout: Int = R.layout.sort_bottom_single_choice,
+        itemColors: List<Int>? = null,
+        itemColorPalettes: List<List<Int>>? = null,
+        callback: (Int) -> Unit
     ) {
         if (this == null) return
 
@@ -284,7 +346,10 @@ object SingleSelectionHelper {
             showApply,
             false,
             { if (it.isNotEmpty()) callback.invoke(it.first()) },
-            dismissCallback
+            dismissCallback,
+            itemLayout = itemLayout,
+            itemColors = itemColors,
+            itemColorPalettes = itemColorPalettes
         )
     }
 
@@ -295,7 +360,31 @@ object SingleSelectionHelper {
         name: String,
         showApply: Boolean,
         dismissCallback: () -> Unit,
-        callback: (Int) -> Unit,
+        callback: (Int) -> Unit
+    ) {
+        showBottomDialog(
+            items = items,
+            selectedIndex = selectedIndex,
+            name = name,
+            showApply = showApply,
+            dismissCallback = dismissCallback,
+            itemLayout = R.layout.sort_bottom_single_choice,
+            itemColors = null,
+            itemColorPalettes = null,
+            callback = callback
+        )
+    }
+
+    fun Activity?.showBottomDialog(
+        items: List<String>,
+        selectedIndex: Int,
+        name: String,
+        showApply: Boolean,
+        dismissCallback: () -> Unit,
+        itemLayout: Int = R.layout.sort_bottom_single_choice,
+        itemColors: List<Int>? = null,
+        itemColorPalettes: List<List<Int>>? = null,
+        callback: (Int) -> Unit
     ) {
         if (this == null) return
 
@@ -308,6 +397,13 @@ object SingleSelectionHelper {
         builder.setContentView(binding.root)
 
         builder.show()
+        builder.window?.let { window ->
+            window.setWindowAnimations(0)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            val attrs = window.attributes
+            attrs.dimAmount = 0f
+            window.attributes = attrs
+        }
         showDialog(
             binding,
             builder,
@@ -317,7 +413,10 @@ object SingleSelectionHelper {
             showApply,
             false,
             { if (it.isNotEmpty()) callback.invoke(it.first()) },
-            dismissCallback
+            dismissCallback,
+            itemLayout = itemLayout,
+            itemColors = itemColors,
+            itemColorPalettes = itemColorPalettes
         )
     }
 
@@ -337,6 +436,13 @@ object SingleSelectionHelper {
         //builder.setContentView(R.layout.bottom_selection_dialog_direct)
         builder.setContentView(binding.root)
         builder.show()
+        builder.window?.let { window ->
+            window.setWindowAnimations(0)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            val attrs = window.attributes
+            attrs.dimAmount = 0f
+            window.attributes = attrs
+        }
         showDialog(
             binding,
             builder,

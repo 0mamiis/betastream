@@ -20,6 +20,7 @@ import com.lagradost.cloudstream3.mvvm.safe
 import com.lagradost.cloudstream3.syncproviders.AccountManager
 import com.lagradost.cloudstream3.syncproviders.AuthRepo
 import com.lagradost.cloudstream3.ui.BaseFragment
+import com.lagradost.cloudstream3.ui.common.BackdropBlurView
 import com.lagradost.cloudstream3.ui.home.HomeFragment.Companion.errorProfilePic
 import com.lagradost.cloudstream3.ui.settings.Globals.EMULATOR
 import com.lagradost.cloudstream3.ui.settings.Globals.PHONE
@@ -181,6 +182,43 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
             activity?.navigate(id, Bundle())
         }
 
+        fun setupBackdropBlur() {
+            val blurViews = listOf<BackdropBlurView>(
+                binding.settingsProfileBlur,
+                binding.settingsHighlightBlur,
+                binding.settingsExperienceBlur,
+                binding.settingsPlaybackBlur,
+                binding.settingsSystemBlur,
+                binding.settingsFooterBlur,
+            )
+
+            val refreshBlurViews = {
+                blurViews.forEach { it.refreshFromSource() }
+            }
+            val refreshBlurViewsAfterScrollStops = Runnable {
+                refreshBlurViews()
+            }
+
+            blurViews.forEach { it.setSourceView(binding.settingsBackdropLayer) }
+
+            binding.settingsScroll.setOnScrollChangeListener { _, _, _, _, _ ->
+                binding.settingsScroll.removeCallbacks(refreshBlurViewsAfterScrollStops)
+                binding.settingsScroll.postDelayed(refreshBlurViewsAfterScrollStops, 96L)
+            }
+
+            binding.settingsBackdropLayer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                refreshBlurViews()
+            }
+
+            binding.settingsFooterPanel.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                refreshBlurViews()
+            }
+
+            binding.root.post {
+                refreshBlurViews()
+            }
+        }
+
         /** used to debug leaks
         showToast(activity,"${VideoDownloadManager.downloadStatusEvent.size} :
         ${VideoDownloadManager.downloadProgressEvent.size}") **/
@@ -248,7 +286,7 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
             // Bottom links (icons)
             settingsGithub.setOnClickListener {
                 (activity ?: return@setOnClickListener).openBrowser(
-                    "https://github.com/recloudstream/cloudstream",
+                    "https://github.com/0mamiis/betastream",
                     isLayout(TV or EMULATOR),
                     this@SettingsFragment
                 )
@@ -256,11 +294,15 @@ class SettingsFragment : BaseFragment<MainSettingsBinding>(
 
             settingsDiscord.setOnClickListener {
                 (activity ?: return@setOnClickListener).openBrowser(
-                    "https://discord.gg/5Hus6fM",
+                    "https://discord.gg/r9NgvhgxxN",
                     isLayout(TV or EMULATOR),
                     this@SettingsFragment
                 )
             }
+        }
+
+        if (binding.settingsBackdropLayer.visibility == View.VISIBLE) {
+            setupBackdropBlur()
         }
 
         val appVersion = BuildConfig.VERSION_NAME

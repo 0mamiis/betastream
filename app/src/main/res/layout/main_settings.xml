@@ -6,204 +6,539 @@
     android:layout_height="match_parent"
     android:background="?attr/primaryBlackBackground">
 
-    <ScrollView
-        android:id="@+id/settings_scroll"
-        android:layout_width="match_parent"
+    <FrameLayout
+        android:id="@+id/settings_backdrop_layer"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/links_and_app_version">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="vertical">
-
-            <LinearLayout
-                android:id="@+id/settings_profile"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="20dp"
-                tools:visibility="visible">
-
-                <androidx.cardview.widget.CardView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:foreground="@drawable/outline_big_25_gray"
-                    app:cardCornerRadius="25dp">
-
-                    <ImageView
-                        android:id="@+id/settings_profile_pic"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:contentDescription="@string/account"
-                        android:scaleType="centerCrop"
-                        tools:src="@drawable/profile_bg_orange" />
-
-                </androidx.cardview.widget.CardView>
-
-                <TextView
-                    android:id="@+id/settings_profile_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:gravity="center_vertical"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
-                    android:textColor="?attr/textColor"
-                    android:textSize="18sp"
-                    android:textStyle="normal"
-                    tools:text="Quick Brown Fox" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/settings_general"
-
-                style="@style/SettingsItem"
-                android:nextFocusDown="@id/settings_player"
-                android:text="@string/category_general" />
-
-            <TextView
-                android:id="@+id/settings_player"
-                style="@style/SettingsItem"
-
-                android:nextFocusUp="@id/settings_general"
-                android:nextFocusDown="@id/settings_providers"
-                android:text="@string/category_player" />
-
-            <TextView
-                android:id="@+id/settings_providers"
-                style="@style/SettingsItem"
-
-                android:nextFocusUp="@id/settings_player"
-                android:nextFocusDown="@id/settings_ui"
-                android:text="@string/category_providers" />
-
-            <TextView
-                android:id="@+id/settings_ui"
-                style="@style/SettingsItem"
-
-                android:nextFocusUp="@id/settings_providers"
-                android:nextFocusDown="@id/settings_updates"
-                android:text="@string/category_ui" />
-
-            <TextView
-                android:id="@+id/settings_updates"
-                style="@style/SettingsItem"
-
-                android:nextFocusUp="@id/settings_ui"
-                android:nextFocusDown="@id/settings_credits"
-                android:text="@string/category_updates" />
-
-            <TextView
-                android:id="@+id/settings_credits"
-                style="@style/SettingsItem"
-                android:nextFocusUp="@id/settings_updates"
-                android:text="@string/category_account" />
-
-            <TextView
-                android:id="@+id/settings_extensions"
-                style="@style/SettingsItem"
-                android:nextFocusUp="@id/settings_credits"
-                android:text="@string/extensions" />
-
-        </LinearLayout>
-    </ScrollView>
-
-    <!-- Pinned to the bottom -->
-    <LinearLayout
-        android:id="@+id/links_and_app_version"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginBottom="6dp"
-        android:orientation="vertical"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Links row (icons only) -->
+        <View
+            android:layout_width="320dp"
+            android:layout_height="112dp"
+            android:layout_gravity="top|end"
+            android:alpha="0.56"
+            android:background="@drawable/bg_settings_orb_blue"
+            android:rotation="-8"
+            android:translationX="108dp"
+            android:translationY="-18dp" />
+
+        <View
+            android:layout_width="248dp"
+            android:layout_height="96dp"
+            android:layout_gravity="top|start"
+            android:alpha="0.24"
+            android:background="@drawable/bg_settings_orb_warm"
+            android:rotation="-12"
+            android:translationX="-56dp"
+            android:translationY="214dp" />
+
+        <View
+            android:layout_width="284dp"
+            android:layout_height="104dp"
+            android:layout_gravity="bottom|end"
+            android:alpha="0.18"
+            android:background="@drawable/bg_settings_orb_blue"
+            android:rotation="10"
+            android:translationX="92dp"
+            android:translationY="102dp" />
+    </FrameLayout>
+
+    <ScrollView
+        android:id="@+id/settings_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
         <LinearLayout
-            android:id="@+id/settings_links"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:paddingStart="14dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="20dp">
 
-            <ImageButton
-                android:id="@+id/settings_github"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/github"
-                android:padding="8dp"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_github_logo" />
+            <FrameLayout
+                android:id="@+id/settings_profile_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_settings_panel_mask"
+                android:clipToOutline="true">
+                <com.lagradost.cloudstream3.ui.common.BackdropBlurView
+                    android:id="@+id/settings_profile_blur"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.9"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:visibility="gone" />
+                <LinearLayout
+                    style="@style/SettingsGlassPanel"
+                    android:background="@drawable/bg_settings_surface_borderless">
+                    <LinearLayout
+                        android:id="@+id/settings_profile"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        tools:visibility="visible">
+                        <FrameLayout
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_settings_chip"
+                            android:clipToOutline="true"
+                            android:padding="1dp">
+                            <ImageView
+                                android:id="@+id/settings_profile_pic"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@string/account"
+                                android:scaleType="centerCrop"
+                                tools:src="@drawable/profile_bg_orange" />
+                        </FrameLayout>
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+                            <TextView
+                                style="@style/SettingsHeroBadge"
+                                android:text="@string/account" />
+                            <TextView
+                                android:id="@+id/settings_profile_text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:textColor="?attr/textColor"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                tools:text="Quick Brown Fox" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
 
-            <ImageButton
-                android:id="@+id/settings_discord"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/discord"
-                android:padding="8dp"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_baseline_discord_24" />
+            <FrameLayout
+                android:id="@+id/settings_highlight_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_settings_panel_mask"
+                android:clipToOutline="true">
+                <com.lagradost.cloudstream3.ui.common.BackdropBlurView
+                    android:id="@+id/settings_highlight_blur"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.88"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:visibility="gone" />
+                <LinearLayout
+                    style="@style/SettingsFeaturePanel"
+                    android:background="@drawable/bg_settings_feature_panel_borderless">
+                    <TextView
+                        style="@style/SettingsHeroTitle"
+                        android:text="@string/title_settings" />
+                    <View
+                        android:layout_width="52dp"
+                        android:layout_height="2dp"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_settings_divider" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/settings_experience_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_settings_panel_mask"
+                android:clipToOutline="true">
+                <com.lagradost.cloudstream3.ui.common.BackdropBlurView
+                    android:id="@+id/settings_experience_blur"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.9"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:visibility="gone" />
+                <LinearLayout style="@style/SettingsGlassPanel">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <TextView
+                            style="@style/SettingsHeroBadge"
+                            android:text="@string/settings_group_experience_title" />
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="2dp"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_settings_divider" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/settings_general"
+                        style="@style/SettingsActionButton"
+                        android:layout_marginTop="10dp"
+                        android:nextFocusDown="@id/settings_ui">
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_settings_chip"
+                            android:padding="9dp">
+                            <ImageView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_outline_settings_24"
+                                app:tint="?attr/textColor" />
+                        </FrameLayout>
+                        <TextView
+                            style="@style/SettingsActionTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:text="@string/category_general" />
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_right_24"
+                            app:tint="?attr/colorPrimary" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/settings_ui"
+                        style="@style/SettingsActionButton"
+                        android:layout_marginTop="8dp"
+                        android:nextFocusDown="@id/settings_player"
+                        android:nextFocusUp="@id/settings_general">
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_settings_chip"
+                            android:padding="9dp">
+                            <ImageView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_dashboard_black_24dp"
+                                app:tint="?attr/textColor" />
+                        </FrameLayout>
+                        <TextView
+                            style="@style/SettingsActionTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:text="@string/category_ui" />
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_right_24"
+                            app:tint="?attr/colorPrimary" />
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/settings_playback_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_settings_panel_mask"
+                android:clipToOutline="true">
+                <com.lagradost.cloudstream3.ui.common.BackdropBlurView
+                    android:id="@+id/settings_playback_blur"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.9"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:visibility="gone" />
+                <LinearLayout style="@style/SettingsGlassPanel">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <TextView
+                            style="@style/SettingsHeroBadge"
+                            android:text="@string/settings_group_playback_title" />
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="2dp"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_settings_divider" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/settings_player"
+                        style="@style/SettingsActionButton"
+                        android:layout_marginTop="10dp"
+                        android:nextFocusDown="@id/settings_providers"
+                        android:nextFocusUp="@id/settings_ui">
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_settings_chip"
+                            android:padding="9dp">
+                            <ImageView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_baseline_play_arrow_24"
+                                app:tint="?attr/textColor" />
+                        </FrameLayout>
+                        <TextView
+                            style="@style/SettingsActionTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:text="@string/category_player" />
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_right_24"
+                            app:tint="?attr/colorPrimary" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/settings_providers"
+                        style="@style/SettingsActionButton"
+                        android:layout_marginTop="8dp"
+                        android:nextFocusDown="@id/settings_updates"
+                        android:nextFocusUp="@id/settings_player">
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_settings_chip"
+                            android:padding="9dp">
+                            <ImageView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_baseline_storage_24"
+                                app:tint="?attr/textColor" />
+                        </FrameLayout>
+                        <TextView
+                            style="@style/SettingsActionTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:text="@string/category_providers" />
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_right_24"
+                            app:tint="?attr/colorPrimary" />
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/settings_system_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_settings_panel_mask"
+                android:clipToOutline="true">
+                <com.lagradost.cloudstream3.ui.common.BackdropBlurView
+                    android:id="@+id/settings_system_blur"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.9"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:visibility="gone" />
+                <LinearLayout style="@style/SettingsGlassPanel">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <TextView
+                            style="@style/SettingsHeroBadge"
+                            android:text="@string/settings_group_system_title" />
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="2dp"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_settings_divider" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/settings_updates"
+                        style="@style/SettingsActionButton"
+                        android:layout_marginTop="10dp"
+                        android:nextFocusDown="@id/settings_credits"
+                        android:nextFocusUp="@id/settings_providers">
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_settings_chip"
+                            android:padding="9dp">
+                            <ImageView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_baseline_system_update_24"
+                                app:tint="?attr/textColor" />
+                        </FrameLayout>
+                        <TextView
+                            style="@style/SettingsActionTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:text="@string/category_updates" />
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_right_24"
+                            app:tint="?attr/colorPrimary" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/settings_credits"
+                        style="@style/SettingsActionButton"
+                        android:layout_marginTop="8dp"
+                        android:nextFocusDown="@id/settings_extensions"
+                        android:nextFocusUp="@id/settings_updates">
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_settings_chip"
+                            android:padding="9dp">
+                            <ImageView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_outline_account_circle_24"
+                                app:tint="?attr/textColor" />
+                        </FrameLayout>
+                        <TextView
+                            style="@style/SettingsActionTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:text="@string/category_account" />
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_right_24"
+                            app:tint="?attr/colorPrimary" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/settings_extensions"
+                        style="@style/SettingsActionButton"
+                        android:layout_marginTop="8dp"
+                        android:nextFocusUp="@id/settings_credits">
+                        <FrameLayout
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_settings_chip"
+                            android:padding="9dp">
+                            <ImageView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_baseline_extension_24"
+                                app:tint="?attr/textColor" />
+                        </FrameLayout>
+                        <TextView
+                            style="@style/SettingsActionTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:text="@string/extensions" />
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_baseline_keyboard_arrow_right_24"
+                            app:tint="?attr/colorPrimary" />
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
+            <FrameLayout
+                android:id="@+id/settings_footer_panel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_settings_panel_mask"
+                android:clipToOutline="true">
+                <com.lagradost.cloudstream3.ui.common.BackdropBlurView
+                    android:id="@+id/settings_footer_blur"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.9"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:visibility="gone" />
+                <LinearLayout
+                    style="@style/SettingsGlassPanel"
+                    android:gravity="center"
+                    android:paddingStart="14dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="12dp">
+                    <LinearLayout
+                        android:id="@+id/settings_links"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+                        <ImageButton
+                            android:id="@+id/settings_github"
+                            style="@style/SettingsFooterIconButton"
+                            android:contentDescription="@string/github"
+                            android:src="@drawable/ic_github_logo"
+                            app:tint="?attr/textColor" />
+                        <ImageButton
+                            android:id="@+id/settings_discord"
+                            style="@style/SettingsFooterIconButton"
+                            android:layout_marginStart="8dp"
+                            android:contentDescription="@string/discord"
+                            android:src="@drawable/ic_baseline_discord_24"
+                            app:tint="?attr/textColor" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/app_version_info"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+                        <TextView android:id="@+id/app_version" android:layout_width="wrap_content" android:layout_height="wrap_content" android:padding="4dp" android:textColor="?attr/textColor" android:textSize="11sp" tools:text="0.0.0" />
+                        <TextView android:id="@+id/delimiter0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#8226;" android:textColor="?attr/textColor" android:textSize="11sp" />
+                        <TextView android:id="@+id/commit_hash" android:layout_width="wrap_content" android:layout_height="wrap_content" android:padding="4dp" android:text="@string/commit_hash" android:textColor="?attr/textColor" android:textSize="11sp" />
+                        <TextView android:id="@+id/delimiter1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="&#8226;" android:textColor="?attr/textColor" android:textSize="11sp" />
+                        <TextView android:id="@+id/build_date" android:layout_width="wrap_content" android:layout_height="wrap_content" android:padding="4dp" android:textColor="?attr/textColor" android:textSize="11sp" tools:text="21/03/2024 09:02 pm" />
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
         </LinearLayout>
-
-        <!-- Existing version row -->
-        <LinearLayout
-            android:id="@+id/app_version_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/app_version"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="6dp"
-                android:textColor="?attr/textColor"
-                android:textSize="12sp"
-                tools:text="0.0.0" />
-
-            <TextView
-                android:id="@+id/delimiter0"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="•"
-                android:textColor="?attr/textColor"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/commit_hash"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="6dp"
-                android:text="@string/commit_hash"
-                android:textColor="?attr/textColor"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/delimiter1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="•"
-                android:textColor="?attr/textColor"
-                android:textSize="12sp" />
-
-            <TextView
-                android:id="@+id/build_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="6dp"
-                android:textColor="?attr/textColor"
-                android:textSize="12sp"
-                tools:text="21/03/2024 09:02 pm" />
-        </LinearLayout>
-
-    </LinearLayout>
-
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

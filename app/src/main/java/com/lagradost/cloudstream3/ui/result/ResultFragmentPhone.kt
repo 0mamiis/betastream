@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Rect
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
@@ -22,6 +23,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import androidx.core.graphics.ColorUtils
 import androidx.core.widget.NestedScrollView
 import androidx.core.widget.doOnTextChanged
 import androidx.lifecycle.ViewModelProvider
@@ -60,13 +62,16 @@ import com.lagradost.cloudstream3.ui.player.CSPlayerEvent
 import com.lagradost.cloudstream3.ui.player.FullScreenPlayer
 import com.lagradost.cloudstream3.ui.player.source_priority.QualityProfileDialog
 import com.lagradost.cloudstream3.ui.quicksearch.QuickSearchFragment
+import com.lagradost.cloudstream3.ui.result.ResultFragment.bindImdbRating
 import com.lagradost.cloudstream3.ui.result.ResultFragment.bindLogo
+import com.lagradost.cloudstream3.ui.result.ResultFragment.bindLogoImage
 import com.lagradost.cloudstream3.ui.result.ResultFragment.getStoredData
 import com.lagradost.cloudstream3.ui.result.ResultFragment.updateUIEvent
 import com.lagradost.cloudstream3.ui.search.SearchAdapter
 import com.lagradost.cloudstream3.ui.search.SearchHelper
 import com.lagradost.cloudstream3.ui.setRecycledViewPool
 import com.lagradost.cloudstream3.utils.AppContextUtils.getNameFull
+import com.lagradost.cloudstream3.utils.AppContextUtils.html
 import com.lagradost.cloudstream3.utils.AppContextUtils.isCastApiAvailable
 import com.lagradost.cloudstream3.utils.AppContextUtils.loadCache
 import com.lagradost.cloudstream3.utils.AppContextUtils.openBrowser
@@ -80,7 +85,9 @@ import com.lagradost.cloudstream3.utils.ImageLoader.loadImage
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showBottomDialog
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showBottomDialogInstant
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showDialog
+import com.lagradost.cloudstream3.utils.UiText
 import com.lagradost.cloudstream3.utils.UIHelper.clipboardHelper
+import com.lagradost.cloudstream3.utils.UIHelper.adjustAlpha
 import com.lagradost.cloudstream3.utils.UIHelper.colorFromAttribute
 import com.lagradost.cloudstream3.utils.UIHelper.dismissSafe
 import com.lagradost.cloudstream3.utils.UIHelper.fixSystemBarsPadding
@@ -94,12 +101,18 @@ import com.lagradost.cloudstream3.utils.downloader.DownloadObjects
 import com.lagradost.cloudstream3.utils.downloader.VideoDownloadManager
 import com.lagradost.cloudstream3.utils.getImageFromDrawable
 import com.lagradost.cloudstream3.utils.setText
-import com.lagradost.cloudstream3.utils.setTextHtml
 import com.lagradost.cloudstream3.utils.txt
 import java.net.URLEncoder
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 open class ResultFragmentPhone : FullScreenPlayer() {
+    companion object {
+        private const val RESULT_BANNER_MEDIA_SCROLL_SPEED = 0.88f
+        private const val RESULT_BANNER_ACTIONS_SCROLL_SPEED = 0.9f
+        private const val RESULT_BANNER_TITLE_SCROLL_SPEED = RESULT_BANNER_ACTIONS_SCROLL_SPEED * 0.8f
+    }
+
     private val gestureRegionsListener =
         object : PanelsChildGestureRegionObserver.GestureRegionsListener {
             override fun onGestureRegionsUpdate(gestureRegions: List<Rect>) {
@@ -114,6 +127,12 @@ open class ResultFragmentPhone : FullScreenPlayer() {
     protected var resultBinding: FragmentResultBinding? = null
     protected var recommendationBinding: ResultRecommendationsBinding? = null
     protected var syncBinding: ResultSyncBinding? = null
+    private var bannerResumeStatus: ResumeWatchingStatus? = null
+    private var bannerPlayTarget: ResultEpisode? = null
+    private var lastBannerParallaxScroll = Int.MIN_VALUE
+    private var lastBannerScrimProgress = Float.NaN
+    private var isTrailerPreviewVisible = false
+    private var bannerBottomScrimDrawable: GradientDrawable? = null
 
     override var layout = R.layout.fragment_result_swipe
 
@@ -164,11 +183,46 @@ open class ResultFragmentPhone : FullScreenPlayer() {
         }
     }
 
-    private fun loadTrailer(index: Int? = null) {
+    private fun setTrailerPreviewVisible(showTrailer: Boolean) {
+        isTrailerPreviewVisible = showTrailer
+        resultBinding?.apply {
+            val showPoster = !showTrailer
+            resultSmallscreenHolder.isVisible = showTrailer && !isFullScreenPlayer
+            resultPosterBackgroundHolder.apply {
+                val fadeIn: Animation = AlphaAnimation(alpha, if (showPoster) 1.0f else 0.0f).apply {
+                    interpolator = DecelerateInterpolator()
+                    duration = 200
+                    fillAfter = true
+                }
+                clearAnimation()
+                startAnimation(fadeIn)
+            }
+
+            // We don't want the trailer to be focusable if it's not visible
+            resultSmallscreenHolder.descendantFocusability = if (showTrailer) {
+                ViewGroup.FOCUS_AFTER_DESCENDANTS
+            } else {
+                ViewGroup.FOCUS_BLOCK_DESCENDANTS
+            }
+        }
+        binding?.resultFullscreenHolder?.isVisible = showTrailer && isFullScreenPlayer
+    }
+
+    private fun resetTrailerPreview() {
+        player.onPause()
+        setTrailerPreviewVisible(showTrailer = false)
+    }
+
+    private fun loadTrailer(index: Int? = null, autoPlay: Boolean = true): Boolean {
 
         val isSuccess =
             currentTrailers.getOrNull(index ?: currentTrailerIndex)
                 ?.let { (extractedTrailerLink, _) ->
+                    val trailerUrl = extractedTrailerLink.url
+                    val isImdbWebVideoPage = trailerUrl.contains("imdb.com/video/", ignoreCase = true)
+                    if (isImdbWebVideoPage) {
+                        return@let false
+                    }
                     context?.let { ctx ->
                         player.onPause()
                         player.loadPlayer(
@@ -179,9 +233,10 @@ open class ResultFragmentPhone : FullScreenPlayer() {
                             startPosition = 0L,
                             subtitles = emptySet(),
                             subtitle = null,
-                            autoPlay = false,
+                            autoPlay = autoPlay,
                             preview = false
                         )
+                        playerBinding?.playerIntroPlay?.isGone = autoPlay
                         true
                     } ?: run {
                         false
@@ -193,7 +248,6 @@ open class ResultFragmentPhone : FullScreenPlayer() {
 
 
         // result_trailer_loading?.isVisible = isSuccess
-        val turnVis = !isSuccess && !isFullScreenPlayer
         resultBinding?.apply {
             // If we load a trailer, then cancel the big logo and only show the small title
             if (isSuccess) {
@@ -206,25 +260,8 @@ open class ResultFragmentPhone : FullScreenPlayer() {
                     titleView = resultTitle
                 )
             }
-            resultSmallscreenHolder.isVisible = turnVis
-            resultPosterBackgroundHolder.apply {
-                val fadeIn: Animation = AlphaAnimation(alpha, if (turnVis) 1.0f else 0.0f).apply {
-                    interpolator = DecelerateInterpolator()
-                    duration = 200
-                    fillAfter = true
-                }
-                clearAnimation()
-                startAnimation(fadeIn)
-            }
-
-            // We don't want the trailer to be focusable if it's not visible
-            resultSmallscreenHolder.descendantFocusability = if (isSuccess) {
-                ViewGroup.FOCUS_AFTER_DESCENDANTS
-            } else {
-                ViewGroup.FOCUS_BLOCK_DESCENDANTS
-            }
-            binding?.resultFullscreenHolder?.isVisible = !isSuccess && isFullScreenPlayer
         }
+        setTrailerPreviewVisible(showTrailer = isSuccess)
         //player_view?.apply {
         //alpha = 0.0f
         //ObjectAnimator.ofFloat(player_view, "alpha", 1f).apply {
@@ -239,16 +276,191 @@ open class ResultFragmentPhone : FullScreenPlayer() {
         //}
         //startAnimation(fadeIn)
         //}
+        return isSuccess
+    }
+
+    private fun bindDescriptionPreview(plotText: UiText?) {
+        val descriptionView = resultBinding?.resultDescription ?: return
+        val toggleView = resultBinding?.resultDescriptionToggle ?: return
+        val ctx = context ?: return
+
+        val fullText = plotText
+            ?.asStringNull(ctx)
+            ?.html()
+            ?.toString()
+            ?.trim()
+            .orEmpty()
+
+        if (fullText.isBlank()) {
+            descriptionView.isGone = true
+            toggleView.isGone = true
+            descriptionView.setOnClickListener(null)
+            toggleView.setOnClickListener(null)
+            return
+        }
+
+        descriptionView.isVisible = true
+        val previewLength = 40
+        if (fullText.length <= previewLength) {
+            descriptionView.text = fullText
+            descriptionView.maxLines = Int.MAX_VALUE
+            toggleView.isGone = true
+            descriptionView.setOnClickListener(null)
+            toggleView.setOnClickListener(null)
+            return
+        }
+
+        var isExpanded = false
+        fun render() {
+            descriptionView.text = if (isExpanded) {
+                fullText
+            } else {
+                fullText.take(previewLength).trimEnd() + "..."
+            }
+            descriptionView.maxLines = if (isExpanded) Int.MAX_VALUE else 2
+            toggleView.text = if (isExpanded) {
+                ctx.getString(R.string.result_description_show_less)
+            } else {
+                ctx.getString(R.string.result_description_show_more)
+            }
+        }
+
+        toggleView.isVisible = true
+        toggleView.setOnClickListener {
+            isExpanded = !isExpanded
+            render()
+        }
+        descriptionView.setOnClickListener {
+            isExpanded = !isExpanded
+            render()
+        }
+        render()
+    }
+
+    private fun updateBannerTrailerButton() {
+        resultBinding?.backgroundPosterTrailerButton?.apply {
+            val hasTrailers = currentTrailers.isNotEmpty()
+            isVisible = hasTrailers
+            if (!hasTrailers) {
+                setOnClickListener(null)
+                setOnLongClickListener(null)
+                return
+            }
+
+            setOnClickListener {
+                val loadedInPlayer = loadTrailer(autoPlay = true)
+                if (!loadedInPlayer) {
+                    currentTrailers.getOrNull(currentTrailerIndex)?.let { (_, ogTrailerLink) ->
+                        context?.openBrowser(ogTrailerLink)
+                    }
+                }
+            }
+            setOnLongClickListener {
+                currentTrailers.getOrNull(currentTrailerIndex)?.let { (_, ogTrailerLink) ->
+                    context?.openBrowser(ogTrailerLink)
+                }
+                true
+            }
+        }
     }
 
     private fun setTrailers(trailers: List<Pair<ExtractorLink, String>>?) {
         context?.updateHasTrailers()
-        if (!LoadResponse.isTrailersEnabled) return
+        currentTrailerIndex = 0
+        if (!LoadResponse.isTrailersEnabled) {
+            currentTrailers = emptyList()
+            resetTrailerPreview()
+            updateBannerTrailerButton()
+            return
+        }
         currentTrailers = trailers?.sortedBy { -it.first.quality } ?: emptyList()
-        loadTrailer()
+        resetTrailerPreview()
+        updateBannerTrailerButton()
+    }
+
+    private fun bindTopBarBlur() {
+        binding?.resultTopBarBackgroundBlur?.setSourceView(resultBinding?.resultTopHolder)
+        binding?.resultTopBarBackgroundBlur?.refreshFromSource()
+    }
+
+    private fun updateBannerParallax(scrollY: Int) {
+        val bannerHeight = resultBinding?.resultTopHolder?.height ?: return
+        if (bannerHeight <= 0) return
+
+        val clampedScrollY = scrollY.coerceIn(0, bannerHeight)
+        updateBannerBottomScrim(clampedScrollY / bannerHeight.toFloat())
+        if (clampedScrollY == lastBannerParallaxScroll) return
+        lastBannerParallaxScroll = clampedScrollY
+
+        val mediaOffset = clampedScrollY * (1f - RESULT_BANNER_MEDIA_SCROLL_SPEED)
+        val titleOffset = clampedScrollY * (1f - RESULT_BANNER_TITLE_SCROLL_SPEED)
+        val actionsOffset = clampedScrollY * (1f - RESULT_BANNER_ACTIONS_SCROLL_SPEED)
+
+        if (isTrailerPreviewVisible) {
+            // Avoid moving a live TextureView-backed trailer during scroll; it causes visible jank.
+            resultBinding?.resultSmallscreenHolder?.translationY = 0f
+            resultBinding?.resultPosterMediaLayer?.translationY = 0f
+            resultBinding?.resultPosterBackground?.translationY = 0f
+            resultBinding?.resultPosterBottomScrim?.translationY = 0f
+            resultBinding?.backgroundPosterContent?.translationY = 0f
+            resultBinding?.backgroundPosterLogoLayer?.translationY = 0f
+            resultBinding?.backgroundPosterActions?.translationY = 0f
+        } else {
+            resultBinding?.resultSmallscreenHolder?.translationY = 0f
+            // Move scrim together with poster to keep the gradient transition visually attached.
+            resultBinding?.resultPosterMediaLayer?.translationY = 0f
+            resultBinding?.resultPosterBackground?.translationY = mediaOffset
+            resultBinding?.resultPosterBottomScrim?.translationY = mediaOffset * 0.9f
+            resultBinding?.backgroundPosterContent?.translationY = 0f
+            resultBinding?.backgroundPosterLogoLayer?.translationY = titleOffset
+            resultBinding?.backgroundPosterActions?.translationY = actionsOffset
+        }
+    }
+
+    private fun updateBannerBottomScrim(progress: Float) {
+        val scrimView = resultBinding?.root?.findViewById<View>(R.id.result_poster_bottom_scrim)
+            ?: return
+        val ctx = context ?: return
+
+        val clampedProgress = progress.coerceIn(0f, 1f)
+        if (!lastBannerScrimProgress.isNaN() && abs(clampedProgress - lastBannerScrimProgress) < 0.01f) {
+            return
+        }
+        lastBannerScrimProgress = clampedProgress
+
+        val baseColor = ctx.colorFromAttribute(R.attr.primaryBlackBackground)
+        // Use app theme surface tones instead of primary color so scrim follows app theme.
+        val themeColor = ColorUtils.blendARGB(
+            ctx.colorFromAttribute(R.attr.primaryGrayBackground),
+            ctx.colorFromAttribute(R.attr.iconGrayBackground),
+            0.45f
+        )
+        val blendedColor = ColorUtils.blendARGB(
+            baseColor,
+            themeColor,
+            0.48f + (0.18f * clampedProgress)
+        )
+
+        val topColor = adjustAlpha(blendedColor, 0.08f + (0.18f * clampedProgress))
+        val bottomColor = adjustAlpha(blendedColor, 0.74f + (0.20f * clampedProgress))
+
+        val drawable = bannerBottomScrimDrawable ?: GradientDrawable(
+            GradientDrawable.Orientation.TOP_BOTTOM,
+            intArrayOf(topColor, bottomColor)
+        ).also {
+            bannerBottomScrimDrawable = it
+            scrimView.background = it
+        }
+
+        drawable.colors = intArrayOf(topColor, bottomColor)
+        scrimView.alpha = 0.82f + (0.18f * clampedProgress)
     }
 
     override fun onDestroyView() {
+        lastBannerParallaxScroll = Int.MIN_VALUE
+        lastBannerScrimProgress = Float.NaN
+        isTrailerPreviewVisible = false
+        bannerBottomScrimDrawable = null
         PanelsChildGestureRegionObserver.Provider.get().let { obs ->
             resultBinding?.resultCastItems?.let {
                 obs.unregister(it)
@@ -351,6 +563,7 @@ open class ResultFragmentPhone : FullScreenPlayer() {
 
         // ===== setup =====
         fixSystemBarsPadding(view)
+        bindTopBarBlur()
         val storedData = getStoredData() ?: return
         activity?.window?.decorView?.clearFocus()
         activity?.loadCache()
@@ -426,20 +639,30 @@ open class ResultFragmentPhone : FullScreenPlayer() {
             }.apply {
                 this.orientation = RecyclerView.HORIZONTAL
             }*/
-            resultCastItems.setRecycledViewPool(ActorAdaptor.sharedPool)
-            resultCastItems.adapter = ActorAdaptor()
-            resultEpisodes.setRecycledViewPool(EpisodeAdapter.sharedPool)
-            resultEpisodes.adapter =
-                EpisodeAdapter(
-                    api?.hasDownloadSupport == true,
-                    { episodeClick ->
-                        viewModel.handleAction(episodeClick)
-                    },
-                    { downloadClickEvent ->
-                        DownloadButtonSetup.handleDownloadClick(downloadClickEvent)
-                    }
+            resultCastItems.apply {
+                setRecycledViewPool(ActorAdaptor.sharedPool)
+                itemAnimator = null
+                isNestedScrollingEnabled = false
+                setItemViewCacheSize(8)
+                adapter = ActorAdaptor()
+            }
+            resultEpisodes.apply {
+                setRecycledViewPool(EpisodeAdapter.sharedPool)
+                itemAnimator = null
+                isNestedScrollingEnabled = false
+                setItemViewCacheSize(12)
+                adapter =
+                    EpisodeAdapter(
+                        api?.hasDownloadSupport == true,
+                        { episodeClick ->
+                            viewModel.handleAction(episodeClick)
+                        },
+                        { downloadClickEvent ->
+                            DownloadButtonSetup.handleDownloadClick(downloadClickEvent)
+                        }
 
-                )
+                    )
+            }
 
             observeNullable(viewModel.selectedSorting) {
                 resultSortButton.setText(it)
@@ -465,12 +688,14 @@ open class ResultFragmentPhone : FullScreenPlayer() {
                 }
             }
 
+            updateBannerParallax(resultScroll.scrollY)
             resultScroll.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+                updateBannerParallax(scrollY)
                 val dy = scrollY - oldScrollY
                 if (dy > 0) { //check for scroll down
-                    binding?.resultBookmarkFab?.shrink()
+                    binding?.resultBookmarkFab?.takeIf { it.isExtended }?.shrink()
                 } else if (dy < -5) {
-                    binding?.resultBookmarkFab?.extend()
+                    binding?.resultBookmarkFab?.takeIf { !it.isExtended }?.extend()
                 }
                 if (!isFullScreenPlayer && player.getIsPlaying()) {
                     if (scrollY > (resultBinding?.fragmentTrailer?.playerBackground?.height
@@ -620,14 +845,42 @@ open class ResultFragmentPhone : FullScreenPlayer() {
         }*/
 
         observeNullable(viewModel.resumeWatching) { resume ->
+            val playTarget = viewModel.getFirstEpisodeToPlay()
+            if (playTarget != null) {
+                bannerPlayTarget = playTarget
+            }
+            bannerResumeStatus = resume
+            updateBannerResumeButton(storedData)
             resultBinding?.apply {
                 if (resume == null) {
-                    resultResumeParent.isVisible = false
-                    resultPlayParent.isVisible = true
-                    resultResumeProgressHolder.isVisible = false
+                    val playEpisode = playTarget ?: return@observeNullable
+                    resultResumeParent.isVisible = true
+                    resultPlayParent.isGone = true
+                    resultResumeProgressHolder.isVisible = true
+                    progressGroup.isVisible = false
+                    resultNextSeriesButton.isVisible = false
+                    resultResumeSeriesButton.text =
+                        resultResumeSeriesButton.resources.getString(R.string.home_play)
+                    resultResumeSeriesButton.setIconResource(R.drawable.ic_baseline_play_arrow_24)
+                    resultResumeSeriesButton.setOnClickListener {
+                        viewModel.handleAction(
+                            EpisodeClickEvent(ACTION_CLICK_DEFAULT, playEpisode)
+                        )
+                    }
+                    resultResumeSeriesButton.setOnLongClickListener {
+                        viewModel.handleAction(
+                            EpisodeClickEvent(ACTION_SHOW_OPTIONS, playEpisode)
+                        )
+                        true
+                    }
                     return@observeNullable
                 }
+
+                progressGroup.isVisible = true
+                resultResumeSeriesButton.text = ""
+                resultResumeSeriesButton.icon = null
                 resultResumeParent.isVisible = true
+                resultPlayParent.isGone = true
                 resume.progress?.let { progress ->
                     resultNextSeriesButton.isVisible = false
                     resultResumeSeriesTitle.apply {
@@ -709,6 +962,8 @@ open class ResultFragmentPhone : FullScreenPlayer() {
                     episodes is Resource.Success && episodes.value.isNotEmpty()
 
                 if (episodes is Resource.Success) {
+                    bannerPlayTarget = viewModel.getFirstEpisodeToPlay()
+                    updateBannerResumeButton(storedData)
                     (resultEpisodes.adapter as? EpisodeAdapter)?.submitList(episodes.value)
 
                     // Show quality dialog with all sources
@@ -781,6 +1036,9 @@ open class ResultFragmentPhone : FullScreenPlayer() {
 
         observeNullable(viewModel.movie) { data ->
             resultBinding?.apply {
+                bannerPlayTarget = (data as? Resource.Success)?.value?.second
+                    ?: viewModel.getFirstEpisodeToPlay()
+                updateBannerResumeButton(storedData)
                 resultPlayMovie.isVisible = data is Resource.Success
                 downloadButton.isVisible =
                     data is Resource.Success && viewModel.currentRepo?.api?.hasDownloadSupport == true
@@ -848,11 +1106,16 @@ open class ResultFragmentPhone : FullScreenPlayer() {
 
         observe(viewModel.page) { data ->
             if (data == null) return@observe
+            resetTrailerPreview()
             resultBinding?.apply {
                 PanelsChildGestureRegionObserver.Provider.get().apply {
                     register(resultCastItems)
                 }
                 (data as? Resource.Success)?.value?.let { d ->
+                    ResultDebugLogger.log(
+                        "UI",
+                        "phone bind title=${d.title} posterImage=${d.posterImage} background=${d.posterBackgroundImage} logoUrl=${d.logoUrl}"
+                    )
                     resultVpn.setText(d.vpnText)
                     resultInfo.setText(d.metaText)
                     resultNoEpisodes.setText(d.noEpisodesFoundText)
@@ -861,8 +1124,13 @@ open class ResultFragmentPhone : FullScreenPlayer() {
                     resultMetaType.setText(d.typeText)
                     resultMetaYear.setText(d.yearText)
                     resultMetaDuration.setText(d.durationText)
-                    resultMetaRating.setText(d.ratingText)
-                    resultMetaStatus.setText(d.onGoingText)
+                    bindImdbRating(
+                        resultMetaImdb,
+                        resultMetaRating,
+                        resultMetaRatingVotes,
+                        d.imdbRatingText,
+                        d.imdbVotesText
+                    )
                     resultMetaContentRating.setText(d.contentRatingText)
                     resultCastText.setText(d.actorsText)
                     resultNextAiring.setText(d.nextAiringEpisode)
@@ -879,6 +1147,14 @@ open class ResultFragmentPhone : FullScreenPlayer() {
                         d.posterBackgroundImage,
                         headers = d.posterHeaders
                     ) {
+                        listener(
+                            onSuccess = { _, _ ->
+                                binding?.resultTopBarBackgroundBlur?.refreshFromSource()
+                            },
+                            onError = { _, _ ->
+                                binding?.resultTopBarBackgroundBlur?.refreshFromSource()
+                            }
+                        )
                         error {
                             getImageFromDrawable(
                                 context ?: return@error null,
@@ -886,6 +1162,7 @@ open class ResultFragmentPhone : FullScreenPlayer() {
                             )
                         }
                     }
+                    binding?.resultTopBarBackgroundBlur?.refreshFromSource()
 
                     bindLogo(
                         url = d.logoUrl,
@@ -893,17 +1170,17 @@ open class ResultFragmentPhone : FullScreenPlayer() {
                         titleView = resultTitle,
                         logoView = backgroundPosterWatermarkBadge
                     )
+                    bindLogoImage(
+                        url = d.logoUrl,
+                        headers = d.posterHeaders,
+                        logoView = resultPosterLogo
+                    )
+                    ResultDebugLogger.log(
+                        "UI",
+                        "phone posterLogoVisible=${resultPosterLogo.isVisible} backgroundLogoVisible=${backgroundPosterWatermarkBadge.isVisible}"
+                    )
 
-                    var isExpanded = false
-                    resultDescription.apply {
-                        setTextHtml(d.plotText)
-                        setOnClickListener {
-                            isExpanded = !isExpanded
-                            maxLines = if (isExpanded) {
-                                Integer.MAX_VALUE
-                            } else 10
-                        }
-                    }
+                    bindDescriptionPreview(d.plotText)
 
                     populateChips(resultTag, d.tags)
 
@@ -1184,6 +1461,7 @@ open class ResultFragmentPhone : FullScreenPlayer() {
         }
 
         observe(viewModel.watchStatus) { watchType ->
+            updateBannerSaveButton(watchType)
             binding?.resultBookmarkFab?.apply {
                 setText(watchType.stringRes)
                 if (watchType == WatchType.NONE) {
@@ -1356,6 +1634,100 @@ open class ResultFragmentPhone : FullScreenPlayer() {
                 resume.result
             )
         )
+    }
+
+    private fun updateBannerResumeButton(
+        storedData: ResultFragment.StoredData
+    ) {
+        resultBinding?.backgroundPosterResumeButton?.apply {
+            val resume = bannerResumeStatus
+            val playTarget = bannerPlayTarget
+
+            if (resume == null && playTarget == null) {
+                isVisible = false
+                setOnClickListener(null)
+                setOnLongClickListener(null)
+                ResultDebugLogger.log("UI", "phone bannerResume visible=false")
+                return
+            }
+
+            isVisible = true
+            if (resume != null) {
+                setIconResource(R.drawable.ic_baseline_resume_arrow2)
+                text = context.getString(R.string.resume)
+                setOnClickListener {
+                    resumeAction(storedData, resume)
+                }
+                setOnLongClickListener {
+                    viewModel.handleAction(
+                        EpisodeClickEvent(ACTION_SHOW_OPTIONS, resume.result)
+                    )
+                    true
+                }
+                ResultDebugLogger.log(
+                    "UI",
+                    "phone bannerResume visible=true mode=resume isMovie=${resume.isMovie} season=${resume.result.season} episode=${resume.result.episode}"
+                )
+            } else {
+                val playEpisode = playTarget ?: return
+                setIconResource(R.drawable.ic_baseline_play_arrow_24)
+                text = resources.getString(R.string.home_play)
+                setOnClickListener {
+                    viewModel.handleAction(
+                        EpisodeClickEvent(ACTION_CLICK_DEFAULT, playEpisode)
+                    )
+                }
+                setOnLongClickListener {
+                    viewModel.handleAction(
+                        EpisodeClickEvent(ACTION_SHOW_OPTIONS, playEpisode)
+                    )
+                    true
+                }
+                ResultDebugLogger.log(
+                    "UI",
+                    "phone bannerResume visible=true mode=play season=${playEpisode.season} episode=${playEpisode.episode}"
+                )
+            }
+        }
+    }
+
+    private fun updateBannerSaveButton(
+        watchType: WatchType
+    ) {
+        val isSaved = watchType != WatchType.NONE
+        resultBinding?.backgroundPosterSaveButton?.apply {
+            isVisible = true
+            text = context.getString(if (isSaved) R.string.saved else R.string.sort_save)
+            setIconResource(
+                if (isSaved) {
+                    R.drawable.ic_baseline_bookmark_24
+                } else {
+                    R.drawable.outline_bookmark_add_24
+                }
+            )
+            setOnClickListener {
+                viewModel.updateWatchStatus(
+                    if (isSaved) WatchType.NONE else WatchType.PLANTOWATCH,
+                    context
+                )
+            }
+            setOnLongClickListener { button ->
+                activity?.showBottomDialog(
+                    WatchType.entries.map { button.context.getString(it.stringRes) }.toList(),
+                    watchType.ordinal,
+                    button.context.getString(R.string.action_add_to_bookmarks),
+                    showApply = false,
+                    {}
+                ) {
+                    viewModel.updateWatchStatus(WatchType.entries[it], context)
+                }
+                true
+            }
+            ResultDebugLogger.log(
+                "UI",
+                "phone bannerSave visible=true saved=$isSaved watchType=$watchType"
+            )
+        }
     }
 
     override fun onPause() {

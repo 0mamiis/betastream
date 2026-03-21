@@ -4,8 +4,11 @@
     android:id="@+id/page_recyclerview"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/transparent"
     android:clipToPadding="false"
     android:focusable="false"
+    android:paddingTop="2dp"
+    android:paddingBottom="24dp"
     android:tag="tv_no_focus_tag"
     tools:listitem="@layout/home_result_grid_expanded" />
 

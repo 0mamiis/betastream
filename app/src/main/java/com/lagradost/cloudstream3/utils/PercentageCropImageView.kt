@@ -52,6 +52,7 @@ import com.lagradost.cloudstream3.mvvm.logError
 class PercentageCropImageView : androidx.appcompat.widget.AppCompatImageView {
     private var mCropYCenterOffsetPct: Float? = null
     private var mCropXCenterOffsetPct: Float? = null
+    private var mCropScale: Float = 1.0f
 
     constructor(context: Context?) : super(context!!)
 
@@ -78,6 +79,12 @@ class PercentageCropImageView : androidx.appcompat.widget.AppCompatImageView {
             require(cropXCenterOffsetPct <= 1.0) { "Value too large: Must be <= 1.0" }
             mCropXCenterOffsetPct = cropXCenterOffsetPct
         }
+    var cropScale: Float
+        get() = mCropScale
+        set(cropScale) {
+            require(cropScale > 0f) { "Value too small: Must be > 0.0" }
+            mCropScale = cropScale
+        }
 
     private fun myConfigureBounds() {
         if (this.scaleType == ScaleType.MATRIX) {
@@ -89,20 +96,15 @@ class PercentageCropImageView : androidx.appcompat.widget.AppCompatImageView {
                 val m = Matrix()
                 val vWidth = width - this.paddingLeft - this.paddingRight
                 val vHeight = height - this.paddingTop - this.paddingBottom
-                val scale: Float
-                var dx = 0f
-                var dy = 0f
-                if (dWidth * vHeight > vWidth * dHeight) {
-                    val cropXCenterOffsetPct =
-                        if (mCropXCenterOffsetPct != null) mCropXCenterOffsetPct!! else 0.5f
-                    scale = vHeight.toFloat() / dHeight.toFloat()
-                    dx = (vWidth - dWidth * scale) * cropXCenterOffsetPct
-                } else {
-                    val cropYCenterOffsetPct =
-                        if (mCropYCenterOffsetPct != null) mCropYCenterOffsetPct!! else 0f
-                    scale = vWidth.toFloat() / dWidth.toFloat()
-                    dy = (vHeight - dHeight * scale) * cropYCenterOffsetPct
-                }
+                val cropXCenterOffsetPct = mCropXCenterOffsetPct ?: 0.5f
+                val cropYCenterOffsetPct = mCropYCenterOffsetPct ?: 0f
+                val baseScale = maxOf(
+                    vWidth.toFloat() / dWidth.toFloat(),
+                    vHeight.toFloat() / dHeight.toFloat()
+                )
+                val scale = baseScale * mCropScale
+                val dx = (vWidth - dWidth * scale) * cropXCenterOffsetPct
+                val dy = (vHeight - dHeight * scale) * cropYCenterOffsetPct
                 m.setScale(scale, scale)
                 m.postTranslate((dx + 0.5f).toInt().toFloat(), (dy + 0.5f).toInt().toFloat())
                 this.imageMatrix = m
@@ -158,6 +160,12 @@ class PercentageCropImageView : androidx.appcompat.widget.AppCompatImageView {
                     mCropXCenterOffsetPct = getFloat(
                         R.styleable.PercentageCropImageView_cropXCenterOffsetPct,
                         0.5f
+                    )
+                }
+                if (hasValue(R.styleable.PercentageCropImageView_cropScale)) {
+                    mCropScale = getFloat(
+                        R.styleable.PercentageCropImageView_cropScale,
+                        1.0f
                     )
                 }
             } catch (e: Exception) {

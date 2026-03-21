@@ -4,14 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/home_root"
     android:layout_width="match_parent"
-
     android:layout_height="match_parent"
+    android:background="@drawable/bg_modern_screen"
     tools:context=".ui.home.HomeFragment">
 
     <FrameLayout
         android:id="@+id/home_loading"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@android:color/transparent"
         android:visibility="gone"
         tools:visibility="visible">
 
@@ -79,7 +80,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/result_padding"
                     android:layout_marginTop="@dimen/result_padding"
-
                     android:layout_marginEnd="@dimen/result_padding"
                     android:orientation="vertical">
 
@@ -95,11 +95,14 @@
         <LinearLayout
             android:id="@+id/home_api_holder"
             android:layout_width="wrap_content"
-            android:layout_height="40dp"
+            android:layout_height="48dp"
             android:layout_gravity="end"
             android:layout_margin="10dp"
-            android:background="@color/transparent"
+            android:background="@drawable/bg_settings_feature_panel"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
             android:visibility="gone">
 
             <com.google.android.material.button.MaterialButton
@@ -116,49 +119,51 @@
 
             <ImageView
                 android:id="@+id/home_preview_reload_provider"
-                android:layout_width="50dp"
-                android:layout_height="match_parent"
-                android:layout_gravity="end"
-                android:background="@drawable/player_button_tv_attr_no_bg"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical"
+                android:background="@drawable/bg_popup_item"
                 android:contentDescription="@string/reload_provider"
                 android:focusable="true"
+                android:nextFocusDown="@id/home_preview_info_btt"
                 android:nextFocusLeft="@id/home_change_api"
                 android:nextFocusRight="@id/home_preview_search_button"
                 android:nextFocusUp="@id/home_preview_reload_provider"
-                android:nextFocusDown="@id/home_preview_info_btt"
                 android:padding="10dp"
                 android:src="@drawable/ic_refresh"
                 android:tag="@string/tv_no_focus_tag"
                 android:visibility="gone"
-                app:tint="@color/player_on_button_tv_attr" />
+                app:tint="?attr/textColor" />
 
             <ImageView
                 android:id="@+id/home_preview_search_button"
-                android:layout_width="50dp"
-                android:layout_height="match_parent"
-                android:layout_gravity="end"
-                android:background="@drawable/player_button_tv_attr_no_bg"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_popup_item"
                 android:contentDescription="@string/search"
+                android:nextFocusDown="@id/home_preview_info_btt"
                 android:nextFocusLeft="@id/home_change_api"
                 android:nextFocusRight="@id/home_switch_account"
-                android:nextFocusDown="@id/home_preview_info_btt"
                 android:padding="10dp"
                 android:src="@drawable/search_icon"
                 android:tag="@string/tv_no_focus_tag"
                 android:visibility="gone"
-                app:tint="@color/player_on_button_tv_attr" />
+                app:tint="?attr/textColor" />
 
             <ImageView
                 android:id="@+id/home_switch_account"
-
-                android:layout_width="50dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_popup_item"
                 android:contentDescription="@string/account"
                 android:nextFocusLeft="@id/home_search"
                 android:padding="10dp"
-                android:src="@drawable/ic_outline_account_circle_24" />
+                android:src="@drawable/ic_outline_account_circle_24"
+                app:tint="?attr/textColor" />
         </LinearLayout>
     </FrameLayout>
 
@@ -167,42 +172,34 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:layout_marginHorizontal="16dp"
+        android:background="@drawable/bg_popup_panel"
+        android:gravity="center"
         android:orientation="vertical"
+        android:padding="16dp"
         android:visibility="gone"
         tools:visibility="gone">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/home_reload_connectionerror"
-            style="@style/WhiteButton"
-
-            android:layout_width="wrap_content"
-
+            style="@style/PopupDialogPrimaryButton"
             android:layout_gravity="center"
-            android:layout_margin="5dp"
             android:minWidth="200dp"
             android:text="@string/reload_error"
             app:icon="@drawable/ic_baseline_autorenew_24" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/home_reload_connection_open_in_browser"
-            style="@style/BlackButton"
-
-            android:layout_width="wrap_content"
-
+            style="@style/PopupDialogSecondaryButton"
             android:layout_gravity="center"
-            android:layout_margin="5dp"
             android:minWidth="200dp"
             android:text="@string/result_open_in_browser"
             app:icon="@drawable/ic_baseline_public_24" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/home_reload_connection_go_to_downloads"
-            style="@style/BlackButton"
-
-            android:layout_width="wrap_content"
-
+            style="@style/PopupDialogSecondaryButton"
             android:layout_gravity="center"
-            android:layout_margin="5dp"
             android:minWidth="200dp"
             android:text="@string/go_to_downloads"
             app:icon="@drawable/netflix_download" />
@@ -211,8 +208,7 @@
             android:id="@+id/result_error_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_margin="5dp"
+            android:layout_marginTop="8dp"
             android:gravity="center"
             android:textColor="?attr/textColor" />
     </LinearLayout>
@@ -221,8 +217,11 @@
         android:id="@+id/home_master_recycler"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:clipToPadding="false"
         android:descendantFocusability="afterDescendants"
         android:nextFocusLeft="@id/nav_rail_view"
+        android:paddingBottom="112dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/homepage_parent"
         tools:visibility="gone" />
@@ -248,7 +247,6 @@
         tools:ignore="ContentDescription"
         tools:visibility="visible" />
 
-    <!-- Placeholder for TV layout random button - always hidden on phone -->
     <ImageView
         android:id="@+id/home_random_button_tv"
         android:layout_width="0dp"

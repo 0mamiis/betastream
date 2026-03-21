@@ -18,6 +18,7 @@ import com.lagradost.cloudstream3.syncproviders.AccountManager.Companion.seconds
 import com.lagradost.cloudstream3.ui.BaseDiffCallback
 import com.lagradost.cloudstream3.ui.NoStateAdapter
 import com.lagradost.cloudstream3.ui.ViewHolderState
+import com.lagradost.cloudstream3.ui.common.ImdbRatingVisuals
 import com.lagradost.cloudstream3.ui.download.DOWNLOAD_ACTION_DOWNLOAD
 import com.lagradost.cloudstream3.ui.download.DOWNLOAD_ACTION_LONG_CLICK
 import com.lagradost.cloudstream3.ui.download.DownloadClickEvent
@@ -97,6 +98,14 @@ class EpisodeAdapter(
             }
     }
 
+    private val airDateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+
+    init {
+        setHasStableIds(true)
+    }
+
+    override fun getItemId(position: Int): Long = getItem(position).id.toLong()
+
     override fun onClearView(holder: ViewHolderState<Any>) {
         if (holder.itemView.hasFocus()) {
             holder.itemView.clearFocus()
@@ -116,22 +125,26 @@ class EpisodeAdapter(
     override fun onCreateCustomContent(parent: ViewGroup, viewType: Int): ViewHolderState<Any> {
         return when (viewType) {
             HAS_NO_POSTER -> {
+                val binding = ResultEpisodeBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+                configureCompactEpisodeHolder(binding)
                 ViewHolderState(
-                    ResultEpisodeBinding.inflate(
-                        LayoutInflater.from(parent.context),
-                        parent,
-                        false
-                    )
+                    binding
                 )
             }
 
             HAS_POSTER -> {
+                val binding = ResultEpisodeLargeBinding.inflate(
+                    LayoutInflater.from(parent.context),
+                    parent,
+                    false
+                )
+                configureLargeEpisodeHolder(binding)
                 ViewHolderState(
-                    ResultEpisodeLargeBinding.inflate(
-                        LayoutInflater.from(parent.context),
-                        parent,
-                        false
-                    )
+                    binding
                 )
             }
 
@@ -139,49 +152,41 @@ class EpisodeAdapter(
         }
     }
 
-    private fun getRuntimeText(item: ResultEpisode): String {
-        // Prefer explicit episode runtime (MainAPI.Episode.runTime) - documented as seconds.
-        val runtimeMinutesFromRunTime = item.runTime?.takeIf { it > 0 }?.let { runtimeSeconds ->
-            // runTime is seconds
-            (runtimeSeconds + 59) / 60
-        }
+    private fun getRuntimeText(item: ResultEpisode): String? {
+        val runtimeSeconds = resolveEpisodeRuntimeSeconds(
+            playbackDurationMs = item.duration,
+            imdbRuntimeSeconds = item.imdbRuntimeSeconds,
+        )
+        return formatEpisodeRuntime(runtimeSeconds)
+    }
 
-        // Fallback to playback duration (stored from player), in ms.
-        val runtimeMinutesFromDurationMs = item.duration.takeIf { it > 0L }?.let { durationMs ->
-            ((durationMs + 59_999L) / 60_000L).toInt()
-        }
+    private fun configureCompactEpisodeHolder(binding: ResultEpisodeBinding) {
+        binding.episodeHolder.layoutParams.width =
+            if (isLayout(TV or EMULATOR)) TV_EP_SIZE.toPx else ViewGroup.LayoutParams.MATCH_PARENT
+    }
 
-        // Final fallback as requested.
-        val runtimeMinutes = runtimeMinutesFromRunTime
-            ?: runtimeMinutesFromDurationMs
-            ?: 0
+    private fun configureLargeEpisodeHolder(binding: ResultEpisodeLargeBinding) {
+        val width =
+            if (isLayout(TV or EMULATOR)) TV_EP_SIZE.toPx else ViewGroup.LayoutParams.MATCH_PARENT
+        binding.episodeLinHolder.layoutParams.width = width
+        binding.episodeHolderLarge.layoutParams.width = width
+        binding.episodeHolder.layoutParams.width = width
 
-        val hours = runtimeMinutes / 60
-        val mins = runtimeMinutes % 60
-        return when {
-            hours > 0 && mins > 0 -> "${hours}h ${mins}m"
-            hours > 0 -> "${hours}h"
-            else -> "${mins}m" // includes 0m
+        if (isLayout(PHONE or EMULATOR) && CommonActivity.appliedTheme == R.style.AmoledMode) {
+            binding.episodeHolderLarge.radius = 0.0f
+            binding.episodeHolder.setPadding(0)
         }
+    }
+
+    private fun formatAirDate(airDate: Long): String {
+        return airDateFormatter.format(Date(airDate))
     }
 
     override fun onBindContent(holder: ViewHolderState<Any>, item: ResultEpisode, position: Int) {
         val itemView = holder.itemView
         when (val binding = holder.view) {
             is ResultEpisodeLargeBinding -> {
-                val setWidth =
-                    if (isLayout(TV or EMULATOR)) TV_EP_SIZE.toPx else ViewGroup.LayoutParams.MATCH_PARENT
-
                 binding.apply {
-                    episodeLinHolder.layoutParams.width = setWidth
-                    episodeHolderLarge.layoutParams.width = setWidth
-                    episodeHolder.layoutParams.width = setWidth
-
-                    if (isLayout(PHONE or EMULATOR) && CommonActivity.appliedTheme == R.style.AmoledMode) {
-                        episodeHolderLarge.radius = 0.0f
-                        episodeHolder.setPadding(0)
-                    }
-
                     downloadButton.isVisible = hasDownloadSupport
                     downloadButton.setDefaultClickListener(
                         DownloadObjects.DownloadEpisodeCached(
@@ -228,9 +233,12 @@ class EpisodeAdapter(
                     downloadButton.setPersistentId(item.id)
                     downloadButton.setStatus(status)
 
-                    val name =
-                        if (item.name == null) "${episodeText.context.getString(R.string.episode)} ${item.episode}" else "${item.episode}. ${item.name}"
-                    val displayName = if (name.length > 15) "${name.take(13)}.." else name
+                    val name = buildEpisodeCardTitle(
+                        episodeLabel = episodeText.context.getString(R.string.episode),
+                        episodeNumber = item.episode,
+                        rawTitle = item.name,
+                    )
+                    val displayName = if (name.length > 20) "${name.take(18)} .." else name
                     episodeFiller.isVisible = item.isFiller == true
                     episodeText.text = displayName
                     episodeText.isSelected = true
@@ -241,7 +249,7 @@ class EpisodeAdapter(
                         else -> null
                     }
                     episodeSeasonBadge.text = badgeText.orEmpty()
-                    episodeSeasonBadge.isVisible = !badgeText.isNullOrBlank()
+                    episodeSeasonBadgeContainer.isVisible = !badgeText.isNullOrBlank()
 
                     if (item.videoWatchState == VideoWatchState.Watched) {
                         episodePlayIcon.setImageResource(R.drawable.ic_baseline_check_24)
@@ -281,7 +289,7 @@ class EpisodeAdapter(
                     episodePoster.isVisible = posterVisible
 
                     val rating10p = item.score?.toFloat(10)
-                    if (rating10p != null && rating10p > 0.1) {
+                    if (item.imdbScore == null && rating10p != null && rating10p > 0.1) {
                         episodeRating.text = episodeRating.context?.getString(R.string.rated_format)
                             ?.format(rating10p)
                     } else {
@@ -289,11 +297,15 @@ class EpisodeAdapter(
                     }
                     episodeRating.isGone = episodeRating.text.isNullOrBlank()
 
-                    // Runtime: always show (fallback 0m)
+                    val imdbRatingText = item.imdbScore?.toStringNull(0.1, 10, 1, false, '.')
+                    episodeImdbRatingHolder.isVisible = !imdbRatingText.isNullOrBlank()
+                    episodeImdbRating.text = imdbRatingText.orEmpty()
+                    ImdbRatingVisuals.apply(episodeImdbRatingIcon, episodeImdbRating, imdbRatingText)
+
                     val runtimeText = getRuntimeText(item)
                     episodeRuntime.setText(txt(runtimeText))
-                    episodeRuntime.isVisible = true
-                    episodeTimeIcon.isVisible = true
+                    episodeRuntime.isVisible = !runtimeText.isNullOrBlank()
+                    episodeTimeIcon.isVisible = !runtimeText.isNullOrBlank()
 
                     val descriptionText = item.description?.let { description ->
                         if (description.length > 60) {
@@ -345,13 +357,7 @@ class EpisodeAdapter(
                         } else {
                             episodePlayIcon.isVisible = true
                             episodeUpcomingIcon.isVisible = false
-
-                            val formattedAirDate = SimpleDateFormat(
-                                "dd MMM yyyy",
-                                Locale.getDefault()
-                            ).format(Date(item.airDate))
-
-                            episodeDate.setText(txt(formattedAirDate))
+                            episodeDate.setText(txt(formatAirDate(item.airDate)))
                         }
                     } else {
                         episodeUpcomingIcon.isVisible = false
@@ -402,11 +408,6 @@ class EpisodeAdapter(
             }
 
             is ResultEpisodeBinding -> {
-                binding.episodeHolder.layoutParams.apply {
-                    width =
-                        if (isLayout(TV or EMULATOR)) TV_EP_SIZE.toPx else ViewGroup.LayoutParams.MATCH_PARENT
-                }
-
                 binding.apply {
                     downloadButton.isVisible = hasDownloadSupport
                     downloadButton.setDefaultClickListener(
@@ -454,8 +455,11 @@ class EpisodeAdapter(
                     downloadButton.setPersistentId(item.id)
                     downloadButton.setStatus(status)
 
-                    val name =
-                        if (item.name == null) "${episodeText.context.getString(R.string.episode)} ${item.episode}" else "${item.episode}. ${item.name}"
+                    val name = buildEpisodeCardTitle(
+                        episodeLabel = episodeText.context.getString(R.string.episode),
+                        episodeNumber = item.episode,
+                        rawTitle = item.name,
+                    )
                     val displayName = if (name.length > 15) "${name.take(13)}.." else name
                     episodeFiller.isVisible = item.isFiller == true
                     episodeText.text = displayName
@@ -482,11 +486,15 @@ class EpisodeAdapter(
                         }
                     }
 
-                    // Runtime: always show (fallback 0m)
                     val runtimeText = getRuntimeText(item)
                     episodeRuntime.setText(txt(runtimeText))
-                    episodeRuntime.isVisible = true
-                    episodeTimeIcon.isVisible = true
+                    episodeRuntime.isVisible = !runtimeText.isNullOrBlank()
+                    episodeTimeIcon.isVisible = !runtimeText.isNullOrBlank()
+
+                    val imdbRatingText = item.imdbScore?.toStringNull(0.1, 10, 1, false, '.')
+                    episodeImdbRatingHolder.isVisible = !imdbRatingText.isNullOrBlank()
+                    episodeImdbRating.text = imdbRatingText.orEmpty()
+                    ImdbRatingVisuals.apply(episodeImdbRatingIcon, episodeImdbRating, imdbRatingText)
 
                     // Date: show if available
                     if (item.airDate != null) {
@@ -503,11 +511,7 @@ class EpisodeAdapter(
                                 )
                             )
                         } else {
-                            val formattedAirDate = SimpleDateFormat(
-                                "dd MMM yyyy",
-                                Locale.getDefault()
-                            ).format(Date(item.airDate))
-                            episodeDate.setText(txt(formattedAirDate))
+                            episodeDate.setText(txt(formatAirDate(item.airDate)))
                         }
                     } else {
                         episodeDate.setText(txt(""))

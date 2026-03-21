@@ -1,6 +1,7 @@
 package com.lagradost.cloudstream3.ui.result
 
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.isVisible
@@ -13,6 +14,7 @@ import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.SeasonData
 import com.lagradost.cloudstream3.TvType
+import com.lagradost.cloudstream3.ui.common.ImdbRatingVisuals
 import com.lagradost.cloudstream3.ui.result.EpisodeAdapter.Companion.getPlayerAction
 import com.lagradost.cloudstream3.utils.AppContextUtils.getApiDubstatusSettings
 import com.lagradost.cloudstream3.utils.DataStoreHelper
@@ -20,6 +22,7 @@ import com.lagradost.cloudstream3.utils.DataStoreHelper.getVideoWatchState
 import com.lagradost.cloudstream3.utils.DataStoreHelper.getViewPos
 import com.lagradost.cloudstream3.utils.Event
 import com.lagradost.cloudstream3.utils.ImageLoader.loadImage
+import com.lagradost.cloudstream3.utils.UiText
 import com.lagradost.cloudstream3.utils.UiImage
 
 const val START_ACTION_RESUME_LATEST = 1
@@ -48,6 +51,7 @@ data class ResultEpisode(
     val position: Long, // time in MS
     val duration: Long, // duration in MS
     val score: Score?,
+    val imdbScore: Score? = null,
     val description: String?,
     val isFiller: Boolean?,
     val tvType: TvType,
@@ -60,7 +64,9 @@ data class ResultEpisode(
     val totalEpisodeIndex: Int? = null,
     val airDate: Long? = null,
     val runTime: Int? = null,
+    val fallbackRuntimeMinutes: Int? = null,
     val seasonData: SeasonData? = null,
+    val imdbRuntimeSeconds: Int? = null,
 )
 
 fun ResultEpisode.getRealPosition(): Long {
@@ -98,7 +104,10 @@ fun buildResultEpisode(
     totalEpisodeIndex: Int? = null,
     airDate: Long? = null,
     runTime: Int? = null,
+    fallbackRuntimeMinutes: Int? = null,
     seasonData: SeasonData? = null,
+    imdbScore: Score? = null,
+    imdbRuntimeSeconds: Int? = null,
 ): ResultEpisode {
     val posDur = getViewPos(id)
     val videoWatchState = getVideoWatchState(id) ?: VideoWatchState.None
@@ -116,6 +125,7 @@ fun buildResultEpisode(
         position = posDur?.position ?: 0,
         duration = posDur?.duration ?: 0,
         score = rating,
+        imdbScore = imdbScore,
         description = description,
         isFiller = isFiller,
         tvType = tvType,
@@ -124,7 +134,9 @@ fun buildResultEpisode(
         totalEpisodeIndex = totalEpisodeIndex,
         airDate = airDate,
         runTime = runTime,
-        seasonData = seasonData
+        fallbackRuntimeMinutes = fallbackRuntimeMinutes,
+        seasonData = seasonData,
+        imdbRuntimeSeconds = imdbRuntimeSeconds
     )
 }
 
@@ -247,10 +259,18 @@ object ResultFragment {
     ) {
         // Cancel it, as we want to remove the listener onSuccess race condition
         logoView.dispose()
+        ResultDebugLogger.log(
+            "UI",
+            "bindLogo view=${viewName(logoView)} url=$url titleView=${viewName(titleView)}"
+        )
 
         if (url.isNullOrBlank()) {
             logoView.isVisible = false
             titleView.isVisible = true
+            ResultDebugLogger.log(
+                "UI",
+                "bindLogo skipped view=${viewName(logoView)} reason=url_blank"
+            )
             return
         }
 
@@ -264,10 +284,18 @@ object ResultFragment {
                     onSuccess = { _, _ ->
                         logoView.isVisible = true
                         titleView.isVisible = false
+                        ResultDebugLogger.log(
+                            "UI",
+                            "bindLogo success view=${viewName(logoView)}"
+                        )
                     },
                     onError = { _, _ ->
                         logoView.isVisible = false
                         titleView.isVisible = true
+                        ResultDebugLogger.log(
+                            "UI",
+                            "bindLogo error view=${viewName(logoView)}"
+                        )
                     },
                     onCancel = {
                         // If we manually cancel, then it should not do anything
@@ -275,6 +303,90 @@ object ResultFragment {
                 )
             }
         )
+    }
+
+    fun bindLogoImage(
+        url: String?,
+        headers: Map<String, String>?,
+        logoView: ImageView
+    ) {
+        logoView.dispose()
+        ResultDebugLogger.log(
+            "UI",
+            "bindLogoImage view=${viewName(logoView)} url=$url parentVisible=${(logoView.parent as? View)?.isShown}"
+        )
+
+        if (url.isNullOrBlank()) {
+            logoView.isVisible = false
+            ResultDebugLogger.log(
+                "UI",
+                "bindLogoImage skipped view=${viewName(logoView)} reason=url_blank"
+            )
+            return
+        }
+
+        logoView.isVisible = true
+        logoView.loadImage(
+            imageData = UiImage.Image(url, headers = headers),
+            builder = {
+                listener(
+                    onSuccess = { _, _ ->
+                        logoView.isVisible = true
+                        ResultDebugLogger.log(
+                            "UI",
+                            "bindLogoImage success view=${viewName(logoView)}"
+                        )
+                    },
+                    onError = { _, _ ->
+                        logoView.isVisible = false
+                        ResultDebugLogger.log(
+                            "UI",
+                            "bindLogoImage error view=${viewName(logoView)}"
+                        )
+                    },
+                    onCancel = {
+                        // If we manually cancel, then it should not do anything
+                    }
+                )
+            }
+        )
+    }
+
+    fun bindImdbRating(
+        containerView: View,
+        ratingView: TextView,
+        votesView: TextView,
+        ratingText: UiText?,
+        votesText: UiText?,
+    ) {
+        val ratingValue = ratingText
+            ?.asStringNull(ratingView.context)
+            ?.trim()
+            ?.takeUnless { it.isNullOrBlank() }
+        val votesValue = votesText
+            ?.asStringNull(votesView.context)
+            ?.trim()
+            ?.takeUnless { it.isNullOrBlank() }
+
+        containerView.isVisible = ratingValue != null
+        ratingView.isVisible = ratingValue != null
+        ratingView.text = ratingValue
+        ImdbRatingVisuals.apply(
+            containerView.findViewById(R.id.result_meta_rating_icon),
+            ratingView,
+            ratingValue
+        )
+        votesView.isVisible = ratingValue != null && votesValue != null
+        votesView.text = votesValue.orEmpty()
+        ResultDebugLogger.log(
+            "UI",
+            "bindImdbRating view=${viewName(ratingView)} rating=$ratingValue votes=$votesValue"
+        )
+    }
+
+    private fun viewName(view: View): String {
+        return runCatching { view.resources.getResourceEntryName(view.id) }
+            .getOrDefault(view.javaClass.simpleName)
     }
 
     fun Fragment.getStoredData(): StoredData? {

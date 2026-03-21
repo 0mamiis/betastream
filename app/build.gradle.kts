@@ -89,6 +89,16 @@ android {
             "SIMKL_CLIENT_SECRET",
             "\"" + (System.getenv("SIMKL_CLIENT_SECRET") ?: localProperties["simkl.secret"]) + "\""
         )
+        buildConfigField(
+            "String",
+            "FANART_PROJECT_API_KEY",
+            "\"" + (System.getenv("FANART_API_KEY") ?: localProperties["fanart.api"]) + "\""
+        )
+        buildConfigField(
+            "String",
+            "FANART_CLIENT_KEY",
+            "\"" + (System.getenv("FANART_CLIENT_KEY") ?: localProperties["fanart.client"]) + "\""
+        )
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

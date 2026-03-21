@@ -9,9 +9,11 @@ import com.lagradost.nicehttp.NiceResponse
  * API for fetching search suggestions from external sources.
  * Uses TheMovieDB API to provide movie/show/anime related suggestions.
  */
+internal const val TMDB_API_URL_BASE = "https://api.themoviedb.org/3"
+internal const val TMDB_API_KEY = "e6333b32409e02a4a6eba6fb7ff866bb"
+
 object SearchSuggestionApi {
-    private const val TMDB_API_URL = "https://api.themoviedb.org/3/search/multi"
-    private const val TMDB_API_KEY = "e6333b32409e02a4a6eba6fb7ff866bb"
+    private const val TMDB_API_URL = "$TMDB_API_URL_BASE/search/multi"
     
     data class TmdbSearchResult(
         @JsonProperty("results") val results: List<TmdbSearchItem>?

@@ -1,22 +1,32 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-     >
+    android:layout_marginStart="6dp"
+    android:layout_marginTop="1dp"
+    android:layout_marginEnd="6dp"
+    android:layout_marginBottom="1dp"
+    android:background="@drawable/bg_popup_item">
+
     <TextView
         android:id="@+id/text1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/CheckLabel"
-        android:layout_gravity="center"
+        style="@style/PopupChoiceLabelNoCheck"
+        android:background="@null"
+        android:duplicateParentState="true"
+        android:paddingEnd="52dp"
         tools:text="hello" />
+
     <ImageView
         android:id="@+id/pinicon"
-        android:layout_width="50dp"
-        android:layout_height="24dp"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
         android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="16dp"
+        android:duplicateParentState="true"
         android:src="@drawable/pin_ic"
         android:visibility="gone"
-        tools:visibility="visible"
-        tools:ignore="RtlHardcoded" />
+        app:tint="?attr/colorPrimary"
+        tools:ignore="RtlHardcoded"
+        tools:visibility="visible" />
 </FrameLayout>

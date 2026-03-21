@@ -18,6 +18,7 @@
             app:show_timeout="0"
             app:hide_on_touch="false"
             app:auto_show="true"
+            app:resize_mode="zoom"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:backgroundTint="@android:color/black"

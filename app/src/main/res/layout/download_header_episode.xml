@@ -1,39 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/episode_holder"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="10dp"
-    android:layout_marginTop="10dp"
-    android:layout_marginEnd="10dp"
-    android:foreground="@drawable/outline_drawable"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="6dp"
     android:focusable="true"
     android:nextFocusRight="@id/download_button"
-    app:cardBackgroundColor="?attr/boxItemBackground"
-    app:cardCornerRadius="@dimen/rounded_image_radius">
-
-<!--    <androidx.core.widget.ContentLoadingProgressBar-->
-<!--        android:id="@+id/download_header_episode_progress"-->
-<!--        style="@android:style/Widget.Material.ProgressBar.Horizontal"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="5dp"-->
-<!--        android:layout_gravity="bottom"-->
-<!--        android:layout_marginBottom="-1.5dp"-->
-<!--        android:progressBackgroundTint="?attr/white"-->
-<!--        android:progressTint="?attr/white"-->
-<!--        tools:progress="50" />-->
+    app:cardBackgroundColor="?attr/primaryBlackBackground"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeColor="#4F9DEBFF"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:foreground="?android:attr/selectableItemBackgroundBorderless"
-        android:orientation="horizontal">
-        <!--app:cardCornerRadius="@dimen/roundedImageRadius"-->
-        <androidx.cardview.widget.CardView
-            android:layout_width="70dp"
-            android:layout_height="104dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="10dp">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="72dp"
+            android:layout_height="108dp"
+            app:cardBackgroundColor="?attr/primaryGrayBackground"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
 
             <ImageView
                 android:id="@+id/download_header_poster"
@@ -42,6 +37,7 @@
                 android:contentDescription="@string/episode_poster_img_des"
                 android:scaleType="centerCrop"
                 tools:src="@drawable/example_poster" />
+
             <FrameLayout
                 android:id="@+id/watch_progress_container"
                 android:layout_width="wrap_content"
@@ -52,21 +48,21 @@
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/play_icon"
-                    style="@style/DownloadHeaderPlayUnderlayProgress"
-                    />
+                    style="@style/DownloadHeaderPlayUnderlayProgress" />
+
                 <com.google.android.material.progressindicator.CircularProgressIndicator
                     android:id="@+id/download_header_episode_progress"
                     style="@style/DownloadHeaderCircularProgress"
                     tools:progress="100" />
             </FrameLayout>
-        </androidx.cardview.widget.CardView>
+        </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginStart="15dp"
-            android:layout_marginEnd="70dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
@@ -74,6 +70,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="?attr/textColor"
+                android:textSize="15sp"
                 android:textStyle="bold"
                 tools:text="Perfect Run" />
 
@@ -81,40 +78,41 @@
                 android:id="@+id/download_header_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
                 android:textColor="?attr/grayTextColor"
+                android:textSize="12sp"
                 tools:text="1 episode | 285MB" />
         </LinearLayout>
 
         <ImageView
             android:id="@+id/download_header_goto_child"
-            android:layout_width="@dimen/download_size"
-            android:layout_height="@dimen/download_size"
-            android:layout_gravity="center_vertical|end"
-            android:layout_marginStart="-50dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_popup_item"
             android:contentDescription="@string/download"
             android:padding="10dp"
-            android:src="@drawable/ic_baseline_keyboard_arrow_right_24" />
+            android:src="@drawable/ic_baseline_keyboard_arrow_right_24"
+            app:tint="?attr/textColor" />
 
         <com.lagradost.cloudstream3.ui.download.button.PieFetchButton
             android:id="@+id/download_button"
-            android:layout_width="@dimen/download_size"
-            android:layout_height="@dimen/download_size"
-            android:layout_gravity="center_vertical|end"
-            android:layout_marginStart="-50dp"
-            android:foreground="@drawable/outline_drawable"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_popup_item"
             android:focusable="true"
             android:nextFocusLeft="@id/episode_holder"
-            android:padding="10dp" />
+            android:padding="8dp" />
 
         <CheckBox
             android:id="@+id/delete_checkbox"
-            android:layout_width="@dimen/download_size"
-            android:layout_height="@dimen/download_size"
-            android:layout_gravity="center_vertical|end"
-            android:layout_marginStart="-50dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_popup_item"
             android:focusable="true"
             android:nextFocusLeft="@id/episode_holder"
-            android:padding="10dp"
+            android:padding="8dp"
             android:visibility="gone" />
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

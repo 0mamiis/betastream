@@ -1,6 +1,6 @@
 package com.lagradost.cloudstream3.ui.result
 
-import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
@@ -8,19 +8,20 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.view.ViewCompat
-import com.lagradost.cloudstream3.CommonActivity.screenHeight
-import com.lagradost.cloudstream3.CommonActivity.screenWidth
 import com.lagradost.cloudstream3.LoadResponse
 import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.ui.player.CSPlayerEvent
 import com.lagradost.cloudstream3.ui.player.PlayerEventSource
+import com.lagradost.cloudstream3.ui.player.PlayerResize
 import com.lagradost.cloudstream3.ui.player.SubtitleData
 import com.lagradost.cloudstream3.utils.BackPressedCallbackHelper.attachBackPressedCallback
 import com.lagradost.cloudstream3.utils.BackPressedCallbackHelper.detachBackPressedCallback
 import com.lagradost.cloudstream3.utils.UIHelper.fixSystemBarsPadding
+import kotlin.math.max
 
 open class ResultTrailerPlayer : ResultFragmentPhone() {
 
@@ -30,9 +31,12 @@ open class ResultTrailerPlayer : ResultFragmentPhone() {
 
     companion object {
         const val TAG = "RESULT_TRAILER"
+        private const val EMBEDDED_TRAILER_CROP_X_FOCUS = 0.5f
+        private const val EMBEDDED_TRAILER_CROP_Y_FOCUS = 0.75f
+        private const val EMBEDDED_TRAILER_EXTRA_ZOOM = 1.2f
     }
 
-    private var playerWidthHeight: Pair<Int, Int>? = null
+    private var defaultTopHolderHeight: Int? = null
 
     override fun nextEpisode() {}
 
@@ -64,65 +68,108 @@ open class ResultTrailerPlayer : ResultFragmentPhone() {
             }
         }
 
-        playerWidthHeight?.let { (w, h) ->
-            if(w <= 0 || h <= 0) return@let
+        val topHolder = resultBinding?.resultTopHolder
+        val embeddedHeight = defaultTopHolderHeight
+            ?: topHolder?.layoutParams?.height?.takeIf { it > 0 }
+            ?: topHolder?.height?.takeIf { it > 0 }
 
-            val orientation = context?.resources?.configuration?.orientation ?: return
+        if (defaultTopHolderHeight == null && embeddedHeight != null) {
+            defaultTopHolderHeight = embeddedHeight
+        }
 
-            val sw = if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                screenWidth
-            } else {
-                screenHeight
+        resultBinding?.resultSmallscreenHolder?.isVisible = !isFullScreenPlayer
+        binding?.resultFullscreenHolder?.isVisible = isFullScreenPlayer
+
+        resultBinding?.fragmentTrailer?.playerBackground?.apply {
+            isVisible = true
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        if (!isFullScreenPlayer && embeddedHeight != null) {
+            topHolder?.layoutParams?.apply {
+                height = embeddedHeight
+            }
+        }
+
+        playerBinding?.playerIntroPlay?.layoutParams = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            if (isFullScreenPlayer) FrameLayout.LayoutParams.MATCH_PARENT
+            else (embeddedHeight ?: FrameLayout.LayoutParams.MATCH_PARENT)
+        )
+
+        applyResizeMode(if (isFullScreenPlayer) {
+            PlayerResize.entries.getOrElse(resizeMode) { PlayerResize.Fit }
+        } else {
+            PlayerResize.Fit
+        })
+        applyEmbeddedTrailerCrop()
+    }
+
+    @SuppressLint("UnsafeOptInUsageError")
+    private fun resetEmbeddedTrailerCrop() {
+        playerView?.videoSurfaceView?.apply {
+            scaleX = 1.0f
+            scaleY = 1.0f
+            translationX = 0.0f
+            translationY = 0.0f
+        }
+    }
+
+    @SuppressLint("UnsafeOptInUsageError")
+    private fun applyEmbeddedTrailerCrop() {
+        if (isFullScreenPlayer) {
+            resetEmbeddedTrailerCrop()
+            return
+        }
+
+        playerView?.post {
+            val trailerPlayerView = playerView ?: return@post
+            val videoSurface = trailerPlayerView.videoSurfaceView ?: return@post
+
+            val playerWidth = trailerPlayerView.width.toFloat()
+            val playerHeight = trailerPlayerView.height.toFloat()
+            val videoWidth = videoSurface.width.toFloat()
+            val videoHeight = videoSurface.height.toFloat()
+
+            if (playerWidth <= 1.0f || playerHeight <= 1.0f || videoWidth <= 1.0f || videoHeight <= 1.0f) {
+                return@post
             }
 
-            //result_trailer_loading?.isVisible = false
-            resultBinding?.resultSmallscreenHolder?.isVisible = !isFullScreenPlayer
-            binding?.resultFullscreenHolder?.isVisible = isFullScreenPlayer
+            val initAspect = (playerHeight * videoWidth) / (playerWidth * videoHeight)
+            val zoomScale = max(initAspect, 1.0f / initAspect) * EMBEDDED_TRAILER_EXTRA_ZOOM
+            val overflowX = max(0.0f, videoWidth * zoomScale - playerWidth)
+            val overflowY = max(0.0f, videoHeight * zoomScale - playerHeight)
 
-            val to = sw * h / w
-
-            resultBinding?.fragmentTrailer?.playerBackground?.apply {
-                isVisible = true
-                layoutParams =
-                    FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        if (isFullScreenPlayer) FrameLayout.LayoutParams.MATCH_PARENT else to
-                    )
-            }
-
-            playerBinding?.playerIntroPlay?.apply {
-                layoutParams =
-                    FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        resultBinding?.resultTopHolder?.measuredHeight
-                            ?: FrameLayout.LayoutParams.MATCH_PARENT
-                    )
-            }
-
-            if (playerBinding?.playerIntroPlay?.isGone == true) {
-                resultBinding?.resultTopHolder?.apply {
-
-                    val anim = ValueAnimator.ofInt(
-                        measuredHeight,
-                        if (isFullScreenPlayer) ViewGroup.LayoutParams.MATCH_PARENT else to
-                    )
-                    anim.addUpdateListener { valueAnimator ->
-                        val `val` = valueAnimator.animatedValue as Int
-                        val layoutParams: ViewGroup.LayoutParams =
-                            layoutParams
-                        layoutParams.height = `val`
-                        setLayoutParams(layoutParams)
-                    }
-                    anim.duration = 200
-                    anim.start()
-                }
-            }
+            videoSurface.scaleX = zoomScale
+            videoSurface.scaleY = zoomScale
+            videoSurface.translationX = (0.5f - EMBEDDED_TRAILER_CROP_X_FOCUS) * overflowX
+            videoSurface.translationY = (0.5f - EMBEDDED_TRAILER_CROP_Y_FOCUS) * overflowY
         }
     }
 
     override fun playerDimensionsLoaded(width: Int, height : Int) {
-        playerWidthHeight = width to height
         fixPlayerSize()
+    }
+
+    private fun applyResizeMode(resize: PlayerResize) {
+        val resizeModeValue = when (resize) {
+            PlayerResize.Fill -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+            PlayerResize.Fit -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+            PlayerResize.Zoom -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+        }
+        playerView?.resizeMode = resizeModeValue
+    }
+
+    override fun resize(resize: PlayerResize, showToast: Boolean) {
+        if (isFullScreenPlayer) {
+            super.resize(resize, showToast)
+        } else {
+            applyResizeMode(PlayerResize.Fit)
+            applyEmbeddedTrailerCrop()
+        }
     }
 
     override fun showMirrorsDialogue() {}
@@ -188,6 +235,7 @@ open class ResultTrailerPlayer : ResultFragmentPhone() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        defaultTopHolderHeight = resultBinding?.resultTopHolder?.layoutParams?.height?.takeIf { it > 0 }
         playerBinding?.playerFullscreen?.setOnClickListener {
             updateFullscreen(!isFullScreenPlayer)
         }

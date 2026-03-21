@@ -19,53 +19,52 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="?android:attr/listPreferredItemHeightSmall"
+    android:layout_marginStart="12dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginEnd="12dp"
+    android:minHeight="56dp"
     android:gravity="center_vertical"
-    android:paddingStart="?android:attr/listPreferredItemPaddingStart"
-    android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
-    android:background="?attr/focusBackground"
+    android:paddingStart="14dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="10dp"
+    android:background="@drawable/bg_settings_action_button"
     android:clipToPadding="false"
     android:baselineAligned="false">
 
-    <include layout="@layout/image_frame"/>
+    <include layout="@layout/image_frame" />
 
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp">
+        android:orientation="vertical">
 
         <TextView
             android:id="@android:id/title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
             android:singleLine="true"
             android:textAppearance="?android:attr/textAppearanceListItem"
-            android:ellipsize="marquee"/>
+            android:textColor="?attr/textColor"
+            android:textSize="15sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@android:id/summary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@android:id/title"
-            android:layout_alignStart="@android:id/title"
-            android:layout_gravity="start"
-            android:textAlignment="viewStart"
-            android:textColor="?android:attr/textColorSecondary"
-            android:maxLines="10"
-            style="@style/PreferenceSummaryTextStyle"/>
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            style="@style/PreferenceSummaryTextStyle" />
+    </LinearLayout>
 
-    </RelativeLayout>
-
-    <!-- Preference should place its actual preference widget here. -->
     <LinearLayout
         android:id="@android:id/widget_frame"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:gravity="end|center_vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="0dp"
-        android:orientation="vertical"/>
-
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="0dp" />
 </LinearLayout>

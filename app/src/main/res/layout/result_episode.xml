@@ -64,7 +64,7 @@
                 android:id="@+id/episode_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
+                android:layout_marginStart="14dp"
                 android:ellipsize="marquee"
                 android:gravity="center_vertical"
                 android:marqueeRepeatLimit="0"
@@ -79,15 +79,16 @@
                 app:layout_constraintTop_toTopOf="parent"
                 tools:text="Episode 1" />
 
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/episode_time_row"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:elevation="4dp"
                 android:layout_marginTop="6dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
+                android:paddingEnd="14dp"
+                android:translationZ="4dp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@id/download_button"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="@id/episode_text"
                 app:layout_constraintTop_toBottomOf="@id/episode_text">
 
@@ -98,28 +99,75 @@
                     android:textColor="?attr/grayTextColor"
                     android:textSize="12sp"
                     android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
                     tools:text="15 Apr 2024" />
 
-                <ImageView
-                    android:id="@+id/episode_time_icon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginStart="9dp"
-                    android:layout_marginEnd="5dp"
-                    android:src="@drawable/ic_baseline_access_time_24"
-                    app:tint="?attr/grayTextColor"
-                    android:contentDescription="@null" />
-
-                <TextView
-                    android:id="@+id/episode_runtime"
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="?attr/grayTextColor"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    tools:text="28m" />
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/episode_imdb_rating_holder"
+                    app:layout_constraintHorizontal_bias="0.5"
+                    app:layout_constraintStart_toEndOf="@id/episode_date"
+                    app:layout_constraintTop_toTopOf="parent">
 
-            </LinearLayout>
+                    <ImageView
+                        android:id="@+id/episode_time_icon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_baseline_access_time_24"
+                        app:tint="?attr/grayTextColor" />
+
+                    <TextView
+                        android:id="@+id/episode_runtime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxLines="1"
+                        android:textColor="?attr/grayTextColor"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        tools:text="1h 40m" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/episode_imdb_rating_holder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:id="@+id/episode_imdb_rating_icon"
+                        android:layout_width="24dp"
+                        android:layout_height="12dp"
+                        android:layout_marginEnd="4dp"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="@null"
+                        app:srcCompat="@drawable/imdb_logo" />
+
+                    <TextView
+                        android:id="@+id/episode_imdb_rating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#F5C518"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        tools:text="8.6" />
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <com.lagradost.cloudstream3.ui.download.button.PieFetchButton
                 android:id="@+id/download_button"

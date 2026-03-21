@@ -700,7 +700,7 @@ class HomeParentItemAdapterPreview(
                     previewViewpager.setCurrentItem(0, false)
                     previewViewpager.isVisible = false
                     previewViewpagerText.isVisible = false
-                    alternativeAccountPadding?.isVisible = true
+                    alternativeAccountPadding?.isVisible = false
                     (binding as? FragmentHomeHeadTvBinding)?.apply {
                         homePreviewInfoBtt.isVisible = false
                     }

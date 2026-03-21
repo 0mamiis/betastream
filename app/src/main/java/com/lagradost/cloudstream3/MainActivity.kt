@@ -1630,9 +1630,9 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                     val syncAPI = libraryViewModel?.currentSyncApi
                     Log.i("SYNC_API", "${syncAPI?.name}, ${syncAPI?.idPrefix}")
                     val icon = if (syncAPI?.idPrefix == localListApi.idPrefix) {
-                        R.drawable.library_icon_selector
+                        R.drawable.ic_nav_files_24
                     } else {
-                        syncAPI?.icon ?: R.drawable.library_icon_selector
+                        syncAPI?.icon ?: R.drawable.ic_nav_files_24
                     }
 
                     binding?.apply {
@@ -2014,10 +2014,16 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
         // (Theme changes call Activity.recreate(), which would otherwise re-trigger the setup screen.)
         if (savedInstanceState == null) {
             try {
+                val skipSetupExtensionsOnce =
+                    settingsManager.getBoolean(
+                        SetupFragmentExtensions.SKIP_SETUP_EXTENSIONS_ONCE_KEY,
+                        false
+                    )
                 if (getKey(HAS_DONE_SETUP_KEY, false) != true) {
                     navController.navigate(R.id.navigation_setup_language)
                     // If no plugins bring up extensions screen
-                } else if (PluginManager.getPluginsOnline().isEmpty()
+                } else if (!skipSetupExtensionsOnce &&
+                    PluginManager.getPluginsOnline().isEmpty()
                     && PluginManager.getPluginsLocal().isEmpty()
 //                && PREBUILT_REPOSITORIES.isNotEmpty()
                 ) {
@@ -2025,6 +2031,10 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
                         R.id.navigation_setup_extensions,
                         SetupFragmentExtensions.newInstance(false)
                     )
+                } else if (skipSetupExtensionsOnce) {
+                    settingsManager.edit {
+                        putBoolean(SetupFragmentExtensions.SKIP_SETUP_EXTENSIONS_ONCE_KEY, false)
+                    }
                 }
             } catch (e: Exception) {
                 logError(e)

@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@null"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:paddingBottom="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -21,85 +22,76 @@
             android:layout_weight="50"
             android:orientation="vertical">
 
-            <!--   android:id="@+id/subs_settings"                 android:foreground="?android:attr/selectableItemBackgroundBorderless"
--->
-<!--
--->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                tools:ignore="UseCompoundDrawables"
-                android:padding="10dp">
+                android:paddingStart="10dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="8dp"
+                tools:ignore="UseCompoundDrawables">
 
-                    <FrameLayout
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="30dp"
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="10dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_popup_field">
+
+                    <androidx.appcompat.widget.SearchView
+                        android:id="@+id/subtitles_search"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         android:layout_gravity="center_vertical"
-                        android:layout_marginEnd="10dp"
-                        android:background="@drawable/search_background">
+                        android:imeOptions="actionSearch"
+                        android:inputType="text"
+                        android:paddingStart="-10dp"
+                        android:paddingEnd="10dp"
+                        app:iconifiedByDefault="false"
+                        app:queryBackground="@color/transparent"
+                        app:queryHint="@string/search_hint"
+                        app:searchIcon="@drawable/search_icon"
+                        tools:ignore="RtlSymmetry" />
 
-                        <androidx.appcompat.widget.SearchView
-                            android:id="@+id/subtitles_search"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_gravity="center_vertical"
-
-                            android:imeOptions="actionSearch"
-                            android:inputType="text"
-
-                            android:paddingStart="-10dp"
-                            android:paddingEnd="10dp"
-                            app:iconifiedByDefault="false"
-
-                            app:queryBackground="@color/transparent"
-                            app:queryHint="@string/search_hint"
-                            app:searchIcon="@drawable/search_icon"
-                            tools:ignore="RtlSymmetry">
-
-                            <!--app:queryHint="@string/search_hint"
-                             android:background="@color/grayBackground" @color/itemBackground
-                                        app:searchHintIcon="@drawable/search_white"
-                                        -->
-                        </androidx.appcompat.widget.SearchView>
-                        <androidx.core.widget.ContentLoadingProgressBar
-                            android:id="@+id/search_loading_bar"
-                            style="@style/Widget.AppCompat.ProgressBar"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="end|center_vertical"
-                            android:foregroundTint="@color/white"
-                            android:progressTint="@color/white"
-                            android:visibility="visible"
-                            tools:visibility="visible">
-
-                        </androidx.core.widget.ContentLoadingProgressBar>
-                    </FrameLayout>
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/year_btt"
-                        style="@style/WhiteButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="30dp"
-                        android:layout_gravity="center_vertical|end"
-                        android:nextFocusLeft="@id/subtitles_search"
-                        android:nextFocusRight="@id/search_filter"
-                        android:text="@string/none" />
-                    <ImageView
-                        android:id="@+id/search_filter"
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
+                    <androidx.core.widget.ContentLoadingProgressBar
+                        android:id="@+id/search_loading_bar"
+                        style="@style/Widget.AppCompat.ProgressBar"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
                         android:layout_gravity="end|center_vertical"
-                        android:layout_margin="10dp"
-                        android:background="?selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/change_providers_img_des"
-                        android:focusable="true"
-                        android:nextFocusLeft="@id/year_btt"
-                        android:nextFocusRight="@id/main_search"
-                        android:nextFocusUp="@id/nav_rail_view"
-                        android:nextFocusDown="@id/search_autofit_results"
-                        android:src="@drawable/ic_baseline_tune_24"
-                        app:tint="?attr/textColor" />
+                        android:layout_marginEnd="12dp"
+                        android:indeterminateTint="?attr/colorPrimary"
+                        android:progressTint="?attr/colorPrimary"
+                        android:visibility="visible"
+                        tools:visibility="visible" />
+                </FrameLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/year_btt"
+                    style="@style/PopupDialogSecondaryButton"
+                    android:layout_gravity="center_vertical|end"
+                    android:nextFocusLeft="@id/subtitles_search"
+                    android:nextFocusRight="@id/search_filter"
+                    android:text="@string/none" />
+
+                <ImageView
+                    android:id="@+id/search_filter"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_popup_item"
+                    android:contentDescription="@string/change_providers_img_des"
+                    android:focusable="true"
+                    android:nextFocusDown="@id/search_autofit_results"
+                    android:nextFocusLeft="@id/year_btt"
+                    android:nextFocusRight="@id/main_search"
+                    android:nextFocusUp="@id/nav_rail_view"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_baseline_tune_24"
+                    app:tint="?attr/textColor" />
 
             </LinearLayout>
 
@@ -107,11 +99,15 @@
                 android:id="@+id/subtitle_adapter"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-
                 android:layout_rowWeight="1"
-                android:background="?attr/primaryBlackBackground"
+                android:background="@android:color/transparent"
+                android:clipToPadding="false"
+                android:divider="@color/transparent"
+                android:dividerHeight="0dp"
                 android:nextFocusLeft="@id/sort_providers"
                 android:nextFocusRight="@id/cancel_btt"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
                 android:requiresFadingEdge="vertical"
                 tools:listfooter="@layout/sort_bottom_footer_add_choice"
                 tools:listitem="@layout/sort_bottom_single_choice" />
@@ -124,21 +120,19 @@
         android:layout_height="60dp"
         android:layout_gravity="bottom"
         android:layout_marginTop="-60dp"
-        android:gravity="bottom|end"
-        android:orientation="horizontal">
+        android:gravity="center_vertical|end"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/apply_btt"
-            style="@style/WhiteButton"
-            android:layout_width="wrap_content"
-            android:layout_gravity="center_vertical|end"
+            style="@style/PopupDialogPrimaryButton"
             android:text="@string/sort_apply" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/cancel_btt"
-            style="@style/BlackButton"
-            android:layout_width="wrap_content"
-            android:layout_gravity="center_vertical|end"
+            style="@style/PopupDialogSecondaryButton"
             android:text="@string/sort_cancel" />
     </LinearLayout>
 </LinearLayout>

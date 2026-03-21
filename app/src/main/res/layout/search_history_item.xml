@@ -5,39 +5,44 @@
     android:id="@+id/home_history_tab"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/outline_drawable_less"
+    android:layout_marginTop="3dp"
+    android:layout_marginBottom="3dp"
+    android:background="@drawable/bg_popup_item_borderless"
     android:focusable="true"
+    android:minHeight="54dp"
     android:nextFocusRight="@id/home_history_remove"
-    android:orientation="horizontal">
-    <!-- android:foreground="?android:attr/selectableItemBackgroundBorderless"
-      -->
+    android:paddingStart="14dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="10dp"
+    android:paddingBottom="10dp">
+
     <TextView
         android:id="@+id/home_history_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:padding="10dp"
+        android:ellipsize="end"
+        android:maxLines="2"
         android:textColor="?attr/textColor"
-        android:textSize="18sp"
+        android:textSize="15sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/home_history_remove"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/home_history_remove"
         tools:text="Hello World" />
 
     <ImageView
         android:id="@+id/home_history_remove"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="center_vertical|end"
-
-        android:background="@drawable/outline_drawable_less"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:background="@drawable/bg_popup_field_borderless"
         android:focusable="true"
         android:nextFocusLeft="@id/home_history_tab"
-        android:padding="10dp"
+        android:padding="8dp"
         android:src="@drawable/ic_baseline_close_24"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:tint="?attr/white"
+        app:tint="?attr/textColor"
         tools:ignore="ContentDescription" />
 </androidx.constraintlayout.widget.ConstraintLayout>

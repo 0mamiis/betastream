@@ -347,8 +347,23 @@ object CommonActivity {
                 else -> R.style.AppTheme
             }
 
+        val selectedTheme = settingsManager.getString(act.getString(R.string.app_theme_key), "AmoledLight")
+        val legacyPrimaryColor = settingsManager.getString(act.getString(R.string.primary_color_key), "Normal")
+        val forcedPrimaryColorByTheme = when (selectedTheme) {
+            "AmoledLight" -> "Normal"
+            "Black" -> "Grey"
+            "Amoled" -> "Normal"
+            "Light" -> "Blue"
+            "System" -> "Normal"
+            "Monet" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) "Monet" else "Normal"
+            "Dracula" -> "Purple"
+            "Lavender" -> "Lavender"
+            "SilentBlue" -> "CoolBlue"
+            else -> null
+        }
+
         val currentOverlayTheme =
-            when (settingsManager.getString(act.getString(R.string.primary_color_key), "Normal")) {
+            when (forcedPrimaryColorByTheme ?: legacyPrimaryColor) {
                 "Normal" -> R.style.OverlayPrimaryColorNormal
                 "DandelionYellow" -> R.style.OverlayPrimaryColorDandelionYellow
                 "CarnationPink" -> R.style.OverlayPrimaryColorCarnationPink
@@ -370,10 +385,8 @@ object CommonActivity {
                 "Lavender" -> R.style.OverlayPrimaryColorLavender
                 "Monet" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                     R.style.OverlayPrimaryColorMonet else R.style.OverlayPrimaryColorNormal
-
                 "Monet2" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                     R.style.OverlayPrimaryColorMonetTwo else R.style.OverlayPrimaryColorNormal
-
                 else -> R.style.OverlayPrimaryColorNormal
             }
 

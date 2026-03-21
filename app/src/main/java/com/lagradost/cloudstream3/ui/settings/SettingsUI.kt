@@ -3,6 +3,7 @@ package com.lagradost.cloudstream3.ui.settings
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.graphics.Color
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import androidx.preference.SeekBarPreference
@@ -27,7 +28,6 @@ import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setTool
 import com.lagradost.cloudstream3.ui.settings.SettingsFragment.Companion.setUpToolbar
 import com.lagradost.cloudstream3.ui.setup.SetupFragmentExtensions
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showBottomDialog
-import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showDialog
 import com.lagradost.cloudstream3.utils.SingleSelectionHelper.showMultiDialog
 import com.lagradost.cloudstream3.utils.UIHelper.hideKeyboard
 import com.lagradost.cloudstream3.utils.UIHelper.toPx
@@ -143,6 +143,33 @@ class SettingsUI : BasePreferenceFragmentCompat() {
                 removeIncompatible("System")
             }
 
+            val themePaletteByValue = mapOf(
+                "AmoledLight" to listOf("#3D50FA", "#2B2C30", "#111111"),
+                "Black" to listOf("#3D50FA", "#111111", "#2B2C30"),
+                "Amoled" to listOf("#3D50FA", "#000000", "#000000"),
+                "Light" to listOf("#3D50FA", "#F1F1F1", "#202125"),
+                "System" to listOf("#3D50FA", "#2B2C30", "#111111"),
+                "Monet" to listOf("#82A8FF", "#2A2F3A", "#D9E2FF"),
+                "Dracula" to listOf("#6200EA", "#414450", "#F8F8F2"),
+                "Lavender" to listOf("#6F55AF", "#F7EEFC", "#2D1B47"),
+                "SilentBlue" to listOf("#408CAC", "#282F49", "#E0E1F3")
+            )
+            val themePrimaryByValue = mapOf(
+                "AmoledLight" to "Normal",
+                "Black" to "Grey",
+                "Amoled" to "Normal",
+                "Light" to "Blue",
+                "System" to "Normal",
+                "Monet" to "Monet",
+                "Dracula" to "Purple",
+                "Lavender" to "Lavender",
+                "SilentBlue" to "CoolBlue"
+            )
+            val prefPalettes = prefValues.map { value ->
+                (themePaletteByValue[value] ?: listOf("#3D50FA", "#2B2C30", "#111111"))
+                    .map { Color.parseColor(it) }
+            }
+
             val currentLayout =
                 settingsManager.getString(getString(R.string.app_theme_key), prefValues.first())
 
@@ -152,52 +179,21 @@ class SettingsUI : BasePreferenceFragmentCompat() {
                 name = getString(R.string.app_theme_settings),
                 // Apply instantly when user selects an item (no "Uygula" button needed)
                 showApply = false,
-                dismissCallback = {}
+                dismissCallback = {},
+                itemLayout = R.layout.sort_bottom_single_choice_color,
+                itemColorPalettes = prefPalettes
             ) {
                 try {
+                    val selectedThemeValue = prefValues[it]
                     settingsManager.edit {
-                        putString(getString(R.string.app_theme_key), prefValues[it])
+                        putString(getString(R.string.app_theme_key), selectedThemeValue)
+                        putString(
+                            getString(R.string.primary_color_key),
+                            themePrimaryByValue[selectedThemeValue] ?: "Normal"
+                        )
                         // Avoid MainActivity showing the "setup extensions" screen after recreate
                         // when the user is just changing theme from Settings.
                         putBoolean(SetupFragmentExtensions.SKIP_SETUP_EXTENSIONS_ONCE_KEY, true)
-                    }
-                    activity?.recreate()
-                } catch (e: Exception) {
-                    logError(e)
-                }
-            }
-            return@setOnPreferenceClickListener true
-        }
-        getPref(R.string.primary_color_key)?.setOnPreferenceClickListener {
-            val prefNames = resources.getStringArray(R.array.themes_overlay_names).toMutableList()
-            val prefValues =
-                resources.getStringArray(R.array.themes_overlay_names_values).toMutableList()
-
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) { // remove monet on android 11 and less
-                val toRemove = prefValues
-                    .mapIndexed { idx, s -> if (s.startsWith("Monet")) idx else null }
-                    .filterNotNull()
-                var offset = 0
-                toRemove.forEach { idx ->
-                    prefNames.removeAt(idx - offset)
-                    prefValues.removeAt(idx - offset)
-                    offset += 1
-                }
-            }
-
-            val currentLayout =
-                settingsManager.getString(getString(R.string.primary_color_key), prefValues.first())
-
-            activity?.showDialog(
-                prefNames.toList(),
-                prefValues.indexOf(currentLayout),
-                getString(R.string.primary_color_settings),
-                true,
-                {}
-            ) {
-                try {
-                    settingsManager.edit {
-                        putString(getString(R.string.primary_color_key), prefValues[it])
                     }
                     activity?.recreate()
                 } catch (e: Exception) {

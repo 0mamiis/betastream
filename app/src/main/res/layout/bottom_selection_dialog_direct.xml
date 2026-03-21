@@ -2,33 +2,34 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_popup_sheet"
+    android:orientation="vertical"
+    android:paddingBottom="8dp">
 
     <TextView
         android:id="@+id/text1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_rowWeight="1"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="10dp"
-        android:paddingStart="?android:attr/listPreferredItemPaddingStart"
-        android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
-        android:textColor="?attr/textColor"
-        android:textSize="20sp"
-        android:textStyle="bold"
+        style="@style/PopupDialogTitle"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="4dp"
         tools:text="Test" />
 
     <ListView
         android:id="@+id/listview1"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_rowWeight="1"
-        android:layout_marginBottom="60dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:clipToPadding="false"
+        android:divider="@color/transparent"
+        android:dividerHeight="0dp"
+        android:maxHeight="520dp"
         android:nestedScrollingEnabled="true"
         android:nextFocusLeft="@id/apply_btt"
         android:nextFocusRight="@id/cancel_btt"
-        android:paddingTop="10dp"
+        android:paddingTop="1dp"
+        android:paddingBottom="1dp"
         android:requiresFadingEdge="vertical"
         tools:listitem="@layout/sort_bottom_single_choice_no_checkmark" />
 </LinearLayout>

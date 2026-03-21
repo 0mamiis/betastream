@@ -15,7 +15,6 @@ import com.lagradost.cloudstream3.MainActivity
 import com.lagradost.cloudstream3.MainActivity.Companion.lastError
 import com.lagradost.cloudstream3.MainActivity.Companion.setLastError
 import com.lagradost.cloudstream3.R
-import com.lagradost.cloudstream3.mvvm.debugAssert
 import com.lagradost.cloudstream3.mvvm.debugWarning
 import com.lagradost.cloudstream3.mvvm.logError
 import com.lagradost.cloudstream3.mvvm.safe
@@ -177,7 +176,11 @@ class DownloadQueueService : Service() {
             debugWarning({ timeTaken == null || timeTaken > 3_000 }, {
                 "Abnormally long downloader startup time of: ${timeTaken ?: timeout.inWholeMilliseconds}ms"
             })
-            debugAssert({ timeTaken == null }, { "Downloader startup should not time out" })
+            // Timeout should not crash the queue service; continue and let downloads start.
+            // Plugins may complete loading shortly after timeout.
+            if (timeTaken == null) {
+                Log.w(TAG, "Plugin readiness wait timed out; continuing queue processing.")
+            }
 
             totalDownloadFlow
                 .takeWhile { (instances, queue) ->

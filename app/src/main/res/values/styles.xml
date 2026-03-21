@@ -92,8 +92,7 @@
     <style name="ChipFilled" parent="@style/Widget.Material3.Chip.Filter">
         <item name="chipBackgroundColor">@color/chip_color</item>
         <item name="chipStrokeColor">@color/white_transparent_toggle</item>
-        <!--        <item name="chipStrokeColor">@color/transparent</item>-->
-        <item name="chipStrokeWidth">2dp</item>
+        <item name="chipStrokeWidth">1dp</item>
         <item name="textColor">@color/chip_color_text</item>
         <item name="android:textColor">@color/chip_color_text</item>
         <item name="checkedIconTint">@color/chip_color_text</item>
@@ -102,6 +101,7 @@
         <item name="android:fontFamily">@font/google_sans</item>
         <item name="android:tag">@string/tv_no_focus_tag</item>
         <item name="chipMinTouchTargetSize">0dp</item>
+        <item name="chipMinHeight">38dp</item>
         <item name="checkedIconVisible">false</item>
     </style>
 
@@ -120,8 +120,8 @@
     </style>
 
     <style name="ChipParent">
-        <item name="chipSpacingVertical">-5dp</item>
-        <item name="chipSpacingHorizontal">5dp</item>
+        <item name="chipSpacingVertical">8dp</item>
+        <item name="chipSpacingHorizontal">8dp</item>
         <item name="textColor">?attr/textColor</item>
     </style>
 
@@ -472,10 +472,9 @@
     </style>
 
     <style name="AppBottomSheetDialogTheme">
-        <item name="android:navigationBarColor">?attr/boxItemBackground</item>
+        <item name="android:navigationBarColor">?attr/primaryBlackBackground</item>
         <item name="android:windowCloseOnTouchOutside">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowAnimationStyle">@style/Animation.Design.BottomSheetDialog</item>
         <item name="bottomSheetStyle">@style/AppModalStyle</item>
     </style>
 
@@ -485,9 +484,9 @@
         <item name="behavior_skipCollapsed">true</item>
         <item name="shapeAppearance">@null</item>
         <item name="shapeAppearanceOverlay">@null</item>
-        <item name="backgroundTint">?attr/primaryBlackBackground</item>
+        <item name="backgroundTint">?attr/primaryGrayBackground</item>
         <item name="android:background">@drawable/rounded_dialog</item>
-        <item name="behavior_peekHeight">512dp</item>
+        <item name="behavior_peekHeight">420dp</item>
     </style>
 
     <style name="PreferenceTheme" parent="@style/AppTheme" />
@@ -497,7 +496,7 @@
         <item name="android:windowMinWidthMinor">@dimen/abc_dialog_min_width_minor</item>
         <item name="android:windowBackground">@drawable/dialog__window_background</item>
         <item name="textAllCaps">false</item>
-        <item name="android:textColorPrimary">?attr/grayTextColor</item>
+        <item name="android:textColorPrimary">?attr/textColor</item>
 
         <item name="buttonBarPositiveButtonStyle">@style/WhiteButton.Dialog</item>
         <item name="buttonBarNegativeButtonStyle">@style/BlackButton.Dialog</item>
@@ -615,21 +614,41 @@
         <item name="android:navigationBarColor">?attr/primaryBlackBackground</item>
     </style>
 
-    <style name="PopupMenu" parent="@android:style/Widget.PopupMenu">
-        <item name="android:backgroundTint">?attr/primaryBlackBackground</item>
+    <style name="PopupMenu" parent="Widget.AppCompat.PopupMenu.Overflow">
+        <item name="android:popupBackground">@drawable/bg_popup_panel</item>
+        <item name="android:dropDownListViewStyle">@style/PopupMenuListView</item>
+        <item name="dropDownListViewStyle">@style/PopupMenuListView</item>
+        <item name="android:textAppearanceLargePopupMenu">@style/PopupMenuText</item>
+        <item name="android:textAppearanceSmallPopupMenu">@style/PopupMenuText</item>
+        <item name="textAppearanceLargePopupMenu">@style/PopupMenuText</item>
+        <item name="textAppearanceSmallPopupMenu">@style/PopupMenuText</item>
+    </style>
+
+    <style name="PopupMenuListView" parent="Widget.AppCompat.ListView.DropDown">
+        <item name="android:listSelector">@drawable/bg_popup_item</item>
+        <item name="android:divider">@color/transparent</item>
+        <item name="android:dividerHeight">0dp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+    </style>
+
+    <style name="PopupMenuText" parent="TextAppearance.AppCompat.Widget.PopupMenu.Large">
+        <item name="android:textColor">?attr/textColor</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
     <style name="CustomPreferenceThemeOverlay" parent="@style/PreferenceThemeOverlay">
         <item name="android:layout">@layout/settings_title_top</item>
+        <item name="preferenceCategoryStyle">@style/CustomPreferenceCategoryStyle</item>
         <item name="preferenceStyle">@style/CustomPreferenceStyle</item>
         <item name="switchPreferenceStyle">@style/CustomSwitchPreferenceStyle</item>
         <item name="seekBarPreferenceStyle">@style/CustomSeekBarPreferenceStyle</item>
     </style>
 
-    <!--
     <style name="CustomPreferenceCategoryStyle" parent="@style/Preference.Category.Material">
         <item name="android:layout">@layout/custom_preference_category_material</item>
-    </style>-->
+    </style>
 
     <style name="CustomSwitchPreferenceStyle" parent="@style/Preference.SwitchPreference.Material">
         <item name="android:layout">@layout/custom_preference_material</item>
@@ -654,6 +673,124 @@
         <item name="android:textColor">?attr/textColor</item>
         <item name="android:textAppearance">?android:attr/textAppearanceListItemSmall</item>
         <item name="drawableEndCompat">@drawable/ic_baseline_keyboard_arrow_right_24</item>
+    </style>
+
+    <style name="SettingsGlassPanel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@drawable/bg_popup_panel</item>
+        <item name="android:padding">12dp</item>
+    </style>
+
+    <style name="SettingsFeaturePanel" parent="SettingsGlassPanel">
+        <item name="android:background">@drawable/bg_popup_panel</item>
+        <item name="android:padding">14dp</item>
+    </style>
+
+    <style name="SettingsSectionTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">?attr/textColor</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0.02</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="SettingsSectionBody">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">?attr/grayTextColor</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:lineSpacingExtra">1dp</item>
+    </style>
+
+    <style name="SettingsHeroBadge">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:paddingStart">0dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingEnd">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+        <item name="android:textColor">?attr/grayTextColor</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="SettingsHeroTitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">?attr/textColor</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:letterSpacing">0.01</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="SettingsHeroBody">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">?attr/grayTextColor</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
+    <style name="SettingsHeroChip">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/bg_settings_chip</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">36dp</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:textColor">?attr/textColor</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="SettingsActionButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">50dp</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:background">@drawable/bg_popup_item</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <style name="SettingsActionTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">?attr/textColor</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0.0</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="SettingsActionBody">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">?attr/grayTextColor</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:lineSpacingExtra">1dp</item>
+    </style>
+
+    <style name="SettingsFooterIconButton">
+        <item name="android:layout_width">40dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:background">@drawable/bg_popup_item</item>
+        <item name="android:padding">9dp</item>
+        <item name="android:scaleType">centerInside</item>
     </style>
 
     <style name="WatchHeaderText">
@@ -713,6 +850,23 @@
         <item name="android:textColor">?attr/iconGrayBackground</item>
         <item name="rippleColor">?attr/primaryBlackBackground</item>
     </style>
+
+    <style name="ResultBannerButton" parent="NiceButton">
+        <item name="strokeColor">?attr/colorPrimary</item>
+        <item name="backgroundTint">?attr/colorPrimary</item>
+        <item name="iconTint">?attr/colorOnPrimary</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="rippleColor">?attr/colorOnPrimary</item>
+    </style>
+
+    <style name="ResultBannerActionButton" parent="NiceButton">
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">?attr/colorPrimary</item>
+        <item name="backgroundTint">@color/result_banner_action_button_background</item>
+        <item name="iconTint">?attr/colorOnPrimary</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="rippleColor">?attr/colorPrimary</item>
+    </style>
     <!-- This is so shit, because android has no native way to either changing the layout (android:layout) or changing the layout_height for no reason.
     So the only way to shrink the buttons is by using insetTop+insetBottom along with the drawable.
     https://android.googlesource.com/platform/frameworks/base/+/master/core/res/res/layout/alert_dialog.xml <- old xml for reference, but new use m3_alert_dialog
@@ -732,6 +886,86 @@
     <style name="BlackLabel" parent="@style/Widget.MaterialComponents.Tooltip">
         <item name="backgroundTint">?attr/iconGrayBackground</item>
         <item name="android:textColor">?attr/textColor</item>
+    </style>
+
+    <style name="PopupDialogTitle" parent="@style/AppTextViewStyle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">?attr/textColor</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+
+    <style name="PopupChoiceLabelNoCheck" parent="@style/AppTextViewStyle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingBottom">6dp</item>
+        <item name="android:textColor">@color/text_selection_color</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:drawablePadding">8dp</item>
+        <item name="android:foreground">@null</item>
+    </style>
+
+    <style name="PopupChoiceLabel" parent="@style/PopupChoiceLabelNoCheck">
+        <item name="drawableStartCompat">@drawable/ic_baseline_check_24_listview</item>
+    </style>
+
+    <style name="PopupChoiceSecondaryText" parent="@style/AppTextViewStyle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/text_selection_color</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="PopupFieldEditText" parent="AppEditStyle">
+        <item name="android:background">@drawable/bg_popup_field</item>
+        <item name="android:textColor">?attr/textColor</item>
+        <item name="android:textColorHint">?attr/grayTextColor</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingEnd">14dp</item>
+        <item name="android:paddingBottom">12dp</item>
+    </style>
+
+    <style name="PopupDialogPrimaryButton" parent="WhiteButton">
+        <item name="android:layout_height">38dp</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_marginStart">4dp</item>
+        <item name="android:layout_marginEnd">4dp</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">?attr/colorPrimary</item>
+        <item name="backgroundTint">?attr/colorPrimary</item>
+        <item name="iconTint">?attr/colorOnPrimary</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="rippleColor">?attr/colorOnPrimary</item>
+    </style>
+
+    <style name="PopupDialogSecondaryButton" parent="BlackButton">
+        <item name="android:layout_height">38dp</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_marginStart">4dp</item>
+        <item name="android:layout_marginEnd">4dp</item>
+        <item name="cornerRadius">8dp</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">?attr/colorPrimary</item>
+        <item name="backgroundTint">?attr/iconGrayBackground</item>
+        <item name="iconTint">?attr/textColor</item>
+        <item name="android:textColor">?attr/textColor</item>
+        <item name="rippleColor">?attr/colorPrimary</item>
     </style>
 
     <style name="CheckLabel" parent="@style/NoCheckLabel">

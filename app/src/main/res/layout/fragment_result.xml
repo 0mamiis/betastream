@@ -32,9 +32,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginBottom="@dimen/loading_margin"
-                android:orientation="horizontal">
+                android:background="@drawable/bg_popup_panel"
+                android:orientation="horizontal"
+                android:padding="10dp">
 
-                <include layout="@layout/loading_poster" />
+                <include layout="@layout/loading_result_poster" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -43,15 +45,15 @@
                     android:layout_marginEnd="@dimen/loading_margin"
                     android:orientation="vertical">
 
-                    <include layout="@layout/loading_line" />
+                    <include layout="@layout/loading_result_line" />
 
-                    <include layout="@layout/loading_line" />
+                    <include layout="@layout/loading_result_line" />
 
-                    <include layout="@layout/loading_line" />
+                    <include layout="@layout/loading_result_line" />
 
-                    <include layout="@layout/loading_line" />
+                    <include layout="@layout/loading_result_line" />
 
-                    <include layout="@layout/loading_line_short" />
+                    <include layout="@layout/loading_result_line_short" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -60,11 +62,11 @@
                 android:layout_height="20dp"
                 tools:ignore="ContentDescription" />
 
-            <include layout="@layout/loading_episode" />
+            <include layout="@layout/loading_result_episode" />
 
-            <include layout="@layout/loading_episode" />
+            <include layout="@layout/loading_result_episode" />
 
-            <include layout="@layout/loading_episode" />
+            <include layout="@layout/loading_result_episode" />
         </LinearLayout>
     </com.facebook.shimmer.ShimmerFrameLayout>
     <!--<ProgressBar
@@ -269,12 +271,12 @@
                 <FrameLayout
                     android:id="@+id/result_top_holder"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp">
+                    android:layout_height="320dp">
 
                     <FrameLayout
                         android:id="@+id/result_smallscreen_holder"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         android:descendantFocusability="blocksDescendants">
 
                         <include
@@ -287,31 +289,112 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent">
 
-                        <ImageView
-                            android:id="@+id/result_poster_background"
+                        <FrameLayout
+                            android:id="@+id/result_poster_media_layer"
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:scaleType="centerCrop" />
+                            android:layout_height="match_parent">
 
-                        <View
+                            <com.lagradost.cloudstream3.utils.PercentageCropImageView
+                                android:id="@+id/result_poster_background"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="matrix"
+                                app:cropScale="1.2"
+                                app:cropXCenterOffsetPct="0.50"
+                                app:cropYCenterOffsetPct="0.75" />
+
+                            <View
+                                android:id="@+id/result_poster_bottom_scrim"
+                                android:layout_width="match_parent"
+                                android:layout_height="128dp"
+                                android:layout_gravity="bottom"
+                                android:background="@drawable/background_shadow" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:id="@+id/background_poster_content"
                             android:layout_width="match_parent"
-                            android:layout_height="60dp"
-                            android:layout_gravity="bottom"
-                            android:background="@drawable/background_shadow" />
-
-                        <ImageView
-                            android:id="@+id/background_poster_watermark_badge"
-                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:maxWidth="220dp"
-                            android:maxHeight="64dp"
-                            android:layout_gravity="bottom|start"
-                            android:layout_marginStart="@dimen/result_padding"
-                            android:layout_marginBottom="12dp"
-                            android:paddingBottom="4dp"
-                            android:adjustViewBounds="true"
-                            android:scaleType="fitStart"
-                            android:contentDescription="@null" />
+                            android:layout_gravity="bottom|center_horizontal"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:paddingStart="20dp"
+                            android:paddingEnd="20dp"
+                            android:paddingBottom="16dp">
+
+                            <FrameLayout
+                                android:id="@+id/background_poster_logo_layer"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <ImageView
+                                    android:id="@+id/background_poster_watermark_badge"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="96dp"
+                                    android:adjustViewBounds="true"
+                                    android:contentDescription="@null"
+                                    android:paddingBottom="6dp"
+                                    android:scaleType="fitCenter" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:id="@+id/background_poster_actions"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:gravity="center"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/background_poster_trailer_button"
+                                    style="@style/ResultBannerButton"
+                                    android:layout_width="50dp"
+                                    android:layout_height="50dp"
+                                    android:minWidth="0dp"
+                                    android:minHeight="50dp"
+                                    android:contentDescription="@string/play_trailer_button"
+                                    android:padding="0dp"
+                                    android:visibility="gone"
+                                    app:cornerRadius="24dp"
+                                    app:icon="@drawable/ic_baseline_ondemand_video_24"
+                                    app:iconPadding="0dp"
+                                    app:iconSize="24dp" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/background_poster_resume_button"
+                                    style="@style/ResultBannerActionButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:minHeight="50dp"
+                                    android:paddingStart="18dp"
+                                    android:paddingEnd="18dp"
+                                    android:text="@string/resume"
+                                    android:textSize="17sp"
+                                    android:visibility="gone"
+                                    app:cornerRadius="24dp"
+                                    app:icon="@drawable/ic_baseline_resume_arrow2"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="8dp"
+                                    app:iconSize="24dp" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/background_poster_save_button"
+                                    style="@style/ResultBannerActionButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:minHeight="50dp"
+                                    android:paddingStart="18dp"
+                                    android:paddingEnd="18dp"
+                                    android:text="@string/sort_save"
+                                    android:textSize="17sp"
+                                    android:visibility="gone"
+                                    app:cornerRadius="24dp"
+                                    app:icon="@drawable/outline_bookmark_add_24"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="8dp"
+                                    app:iconSize="24dp" />
+                            </LinearLayout>
+                        </LinearLayout>
 
                     </FrameLayout>
                 </FrameLayout>
@@ -319,6 +402,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:background="?attr/primaryBlackBackground"
                     android:clipToPadding="false"
                     android:orientation="vertical"
                     android:paddingStart="@dimen/result_padding"
@@ -350,7 +434,22 @@
                                 android:foreground="@drawable/outline_drawable"
                                 android:scaleType="centerCrop"
                                 tools:src="@drawable/example_poster" />
-                        </androidx.cardview.widget.CardView>
+
+                            <ImageView
+                                android:id="@+id/result_poster_logo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="bottom|center_horizontal"
+                                android:layout_marginStart="8dp"
+                                android:layout_marginEnd="8dp"
+                                android:layout_marginBottom="8dp"
+                                android:adjustViewBounds="true"
+                                android:contentDescription="@null"
+                                android:maxWidth="84dp"
+                                android:maxHeight="40dp"
+                                android:scaleType="fitCenter"
+                                android:visibility="gone" />
+                         </androidx.cardview.widget.CardView>
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -388,21 +487,61 @@
                                 <TextView
                                     android:id="@+id/result_meta_type"
                                     style="@style/ResultInfoText"
+                                    android:textStyle="bold"
                                     tools:text="Movie" />
 
                                 <TextView
                                     android:id="@+id/result_meta_year"
                                     style="@style/ResultInfoText"
+                                    android:textStyle="bold"
                                     tools:text="2022" />
 
-                                <TextView
-                                    android:id="@+id/result_meta_rating"
-                                    style="@style/ResultInfoText"
-                                    tools:text="Rated: 8.5/10.0" />
+                                <LinearLayout
+                                    android:id="@+id/result_meta_imdb"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center_vertical"
+                                    android:orientation="vertical">
+
+                                    <LinearLayout
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
+
+                                        <androidx.appcompat.widget.AppCompatImageView
+                                            android:id="@+id/result_meta_rating_icon"
+                                            android:layout_width="28dp"
+                                            android:layout_height="14dp"
+                                            android:layout_marginEnd="4dp"
+                                            android:adjustViewBounds="true"
+                                            android:contentDescription="@null"
+                                            app:srcCompat="@drawable/imdb_logo" />
+
+                                        <TextView
+                                            android:id="@+id/result_meta_rating"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:textColor="#F5C518"
+                                            android:textSize="13sp"
+                                            android:textStyle="bold"
+                                            tools:text="8.5" />
+                                    </LinearLayout>
+
+                                    <TextView
+                                        android:id="@+id/result_meta_rating_votes"
+                                        style="@style/ResultInfoText"
+                                        android:gravity="start"
+                                        android:minHeight="0dp"
+                                        android:textSize="7.7sp"
+                                        tools:text="2.58M" />
+                                </LinearLayout>
 
                                 <TextView
                                     android:id="@+id/result_meta_status"
                                     style="@style/ResultInfoText"
+                                    android:visibility="gone"
+                                    android:textStyle="bold"
                                     tools:text="Ongoing" />
 
                                 <TextView
@@ -441,6 +580,18 @@
                                     android:visibility="gone"
                                     tools:ignore="ContentDescription" />
                             </FrameLayout>
+
+                            <TextView
+                                android:id="@+id/result_description_toggle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="@string/result_description_show_more"
+                                android:textColor="?attr/colorPrimary"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:visibility="gone"
+                                tools:visibility="visible" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -589,7 +740,7 @@
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/result_resume_series_button"
-                                style="@style/WhiteButton"
+                                style="@style/ResultBannerButton"
                                 android:layout_width="match_parent"
                                 android:layout_margin="0dp"
                                 android:visibility="visible" />
@@ -610,13 +761,13 @@
                                     <ImageView
                                         android:id="@+id/episode_play_icon"
                                         style="@style/ContinueWatchingPlayUnderlayProgress"
-                                        app:tint="?attr/black" />
+                                        app:tint="?attr/colorOnPrimary" />
 
                                     <com.google.android.material.progressindicator.CircularProgressIndicator
                                         android:id="@+id/result_resume_series_progress"
                                         style="@style/ContinueWatchingCircularProgress"
-                                        app:indicatorColor="?attr/iconGrayBackground"
-                                        app:trackColor="@color/skipOpTransparent"
+                                        app:indicatorColor="?attr/colorOnPrimary"
+                                        app:trackColor="#40FFFFFF"
                                         tools:progress="50" />
                                 </FrameLayout>
 
@@ -632,7 +783,7 @@
                                     android:maxLines="1"
                                     android:paddingStart="5dp"
                                     android:textAllCaps="false"
-                                    android:textColor="?attr/iconGrayBackground"
+                                    android:textColor="?attr/colorOnPrimary"
                                     android:textSize="15sp"
                                     android:textStyle="bold"
                                     android:visibility="visible"
@@ -651,7 +802,7 @@
                                     android:maxLines="1"
                                     android:paddingStart="5dp"
                                     android:textAllCaps="false"
-                                    android:textColor="?attr/iconGrayBackground"
+                                    android:textColor="?attr/colorOnPrimary"
                                     android:textSize="15sp"
                                     android:textStyle="bold"
                                     android:visibility="gone"
@@ -671,7 +822,7 @@
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/result_next_series_button"
-                                style="@style/WhiteButton"
+                                style="@style/ResultBannerButton"
                                 android:layout_width="match_parent"
                                 android:layout_gravity="center_vertical"
                                 android:layout_marginVertical="5dp"
@@ -927,13 +1078,13 @@
                                     android:layout_height="wrap_content"
                                     android:orientation="vertical">
 
-                                    <include layout="@layout/loading_episode" />
+                                    <include layout="@layout/loading_result_episode" />
 
-                                    <include layout="@layout/loading_episode" />
+                                    <include layout="@layout/loading_result_episode" />
 
-                                    <include layout="@layout/loading_episode" />
+                                    <include layout="@layout/loading_result_episode" />
 
-                                    <include layout="@layout/loading_episode" />
+                                    <include layout="@layout/loading_result_episode" />
                                 </LinearLayout>
                             </com.facebook.shimmer.ShimmerFrameLayout>
                             <!--<androidx.core.widget.ContentLoadingProgressBar

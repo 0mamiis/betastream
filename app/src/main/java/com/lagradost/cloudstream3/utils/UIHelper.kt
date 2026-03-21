@@ -37,7 +37,6 @@ import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.annotation.DimenRes
 import androidx.annotation.StyleRes
-import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.app.ActivityCompat
@@ -587,13 +586,12 @@ object UIHelper {
         items: List<Pair<Int, Int>>,
         onMenuItemClick: MenuItem.() -> Unit,
     ): PopupMenu {
-        val ctw = ContextThemeWrapper(context, R.style.PopupMenu)
         val popup = PopupMenu(
-            ctw,
+            context,
             this,
             Gravity.NO_GRAVITY,
-            androidx.appcompat.R.attr.actionOverflowMenuStyle,
-            0
+            0,
+            R.style.PopupMenu
         )
 
         items.forEach { (id, stringRes) ->
@@ -617,13 +615,12 @@ object UIHelper {
         items: List<Pair<Int, String>>,
         onMenuItemClick: MenuItem.() -> Unit,
     ): PopupMenu {
-        val ctw = ContextThemeWrapper(context, R.style.PopupMenu)
         val popup = PopupMenu(
-            ctw,
+            context,
             this,
             Gravity.NO_GRAVITY,
-            androidx.appcompat.R.attr.actionOverflowMenuStyle,
-            0
+            0,
+            R.style.PopupMenu
         )
 
         items.forEach { (id, string) ->

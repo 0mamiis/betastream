@@ -1,18 +1,60 @@
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        style="@style/AppTextViewStyle"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="6dp"
+    android:layout_marginTop="1dp"
+    android:layout_marginEnd="6dp"
+    android:layout_marginBottom="1dp"
+    android:background="@drawable/bg_popup_item"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="6dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:orientation="horizontal">
+
+        <View
+            android:id="@+id/theme_color_dot_1"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/bg_theme_color_dot"
+            android:duplicateParentState="true" />
+
+        <View
+            android:id="@+id/theme_color_dot_2"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/bg_theme_color_dot"
+            android:duplicateParentState="true" />
+
+        <View
+            android:id="@+id/theme_color_dot_3"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:background="@drawable/bg_theme_color_dot"
+            android:duplicateParentState="true" />
+    </LinearLayout>
+
+    <TextView
         android:id="@android:id/text1"
+        style="@style/PopupChoiceLabelNoCheck"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="?android:attr/listPreferredItemHeightSmall"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="@color/text_selection_color"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="7dip"
-        tools:text="TEST"
-        android:checkMark="?android:attr/listChoiceIndicatorSingle"
-        android:ellipsize="marquee"
-        android:foreground="?attr/selectableItemBackgroundBorderless" />
+        android:background="@null"
+        android:duplicateParentState="true"
+        android:paddingStart="0dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="0dp"
+        android:paddingBottom="0dp"
+        tools:text="Ocean Blue" />
+</LinearLayout>

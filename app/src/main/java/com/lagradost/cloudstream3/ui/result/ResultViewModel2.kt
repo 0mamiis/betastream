@@ -24,8 +24,10 @@ import com.lagradost.cloudstream3.CommonActivity.getCastSession
 import com.lagradost.cloudstream3.CommonActivity.showToast
 import com.lagradost.cloudstream3.LoadResponse.Companion.addTrailer
 import com.lagradost.cloudstream3.LoadResponse.Companion.getAniListId
+import com.lagradost.cloudstream3.LoadResponse.Companion.getImdbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.getKitsuId
 import com.lagradost.cloudstream3.LoadResponse.Companion.getMalId
+import com.lagradost.cloudstream3.LoadResponse.Companion.getTMDbId
 import com.lagradost.cloudstream3.LoadResponse.Companion.isMovie
 import com.lagradost.cloudstream3.LoadResponse.Companion.readIdFromString
 import com.lagradost.cloudstream3.metaproviders.SyncRedirector
@@ -155,6 +157,8 @@ data class ResultData(
     val plotText: UiText,
     val apiName: UiText,
     val ratingText: UiText?,
+    val imdbRatingText: UiText?,
+    val imdbVotesText: UiText?,
     val contentRatingText: UiText?,
     val vpnText: UiText?,
     val metaText: UiText?,
@@ -201,7 +205,10 @@ fun txt(status: DubStatus?): UiText? {
     )
 }
 
-fun LoadResponse.toResultData(repo: APIRepository): ResultData {
+fun LoadResponse.toResultData(
+    repo: APIRepository,
+    imdbRatingData: ImdbRatingData? = null,
+): ResultData {
     debugAssert({ repo.name != apiName }) {
         "Api returned wrong apiName"
     }
@@ -251,6 +258,11 @@ fun LoadResponse.toResultData(repo: APIRepository): ResultData {
         }
     }
     val dur = duration
+    val imdbAggregateRatingText = imdbRatingData?.aggregateRating
+        ?.let(ImdbTitleRatingSupport::formatAggregateRating)
+    val imdbVotesText = imdbRatingData?.voteCount
+        ?.takeIf { it > 0 }
+        ?.let(ImdbTitleRatingSupport::formatVoteCount)
     return ResultData(
         syncData = syncData,
         plotHeaderText = txt(
@@ -302,8 +314,12 @@ fun LoadResponse.toResultData(repo: APIRepository): ResultData {
         ),
         yearText = txt(year?.toString()),
         apiName = txt(apiName),
-        ratingText = score?.toStringNull(0.1, 10, 1, false, '.')
+        // Provider score is intentionally not used for the detail IMDb badge anymore.
+        // ratingText = score?.toStringNull(0.1, 10, 1, false, '.')?.let { txt(R.string.rating_format, it) }
+        ratingText = imdbAggregateRatingText
             ?.let { txt(R.string.rating_format, it) },
+        imdbRatingText = imdbAggregateRatingText?.let(::txt),
+        imdbVotesText = imdbVotesText?.let(::txt),
         contentRatingText = txt(contentRating),
         vpnText = txt(
             when (repo.vpnStatus) {
@@ -431,6 +447,8 @@ class ResultViewModel2 : ViewModel() {
     var EPISODE_RANGE_SIZE: Int = 20
     fun clear() {
         currentResponse = null
+        currentImdbRatingData = null
+        currentImdbEpisodeMetadata = emptyMap()
         _page.postValue(null)
     }
 
@@ -446,6 +464,8 @@ class ResultViewModel2 : ViewModel() {
     private var currentDubStatus: List<DubStatus> = listOf()
     private var currentMeta: SyncAPI.SyncResult? = null
     private var currentSync: Map<String, String>? = null
+    private var currentImdbRatingData: ImdbRatingData? = null
+    private var currentImdbEpisodeMetadata: Map<ImdbEpisodeKey, ImdbEpisodeMetadata> = emptyMap()
     private var currentIndex: EpisodeIndexer? = null
     private var currentSorting: EpisodeSortType? = null
     private var currentRange: EpisodeRange? = null
@@ -1094,6 +1114,24 @@ class ResultViewModel2 : ViewModel() {
         }
     }
 
+    private fun getLogoTitleCandidates(
+        response: LoadResponse,
+        meta: SyncAPI.SyncResult?
+    ): List<String> {
+        return buildList {
+            add(response.name)
+            add(meta?.title ?: "")
+            addAll(meta?.synonyms.orEmpty())
+
+            if (response is AnimeLoadResponse) {
+                add(response.engName ?: "")
+                add(response.japName ?: "")
+            }
+        }.map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+    }
+
     private fun startChromecast(
         activity: Activity?,
         result: ResultEpisode,
@@ -1646,14 +1684,23 @@ class ResultViewModel2 : ViewModel() {
         var updateEpisodes = false
         val out = resp.apply {
             Log.i(TAG, "applyMeta")
+            ResultDebugLogger.log(
+                "Meta",
+                "applyMeta start name=$name type=$type poster=$posterUrl background=$backgroundPosterUrl logo=$logoUrl metaTitle=${meta?.title} metaPoster=${meta?.posterUrl} metaBackground=${meta?.backgroundPosterUrl}"
+            )
 
             if (meta != null) {
+                val previousDuration = duration
                 duration = duration ?: meta.duration
                 score = score ?: meta.publicScore
                 tags = tags ?: meta.genres
                 plot = if (plot.isNullOrBlank()) meta.synopsis else plot
                 posterUrl = posterUrl ?: meta.posterUrl ?: meta.backgroundPosterUrl
                 actors = actors ?: meta.actors
+
+                if (this is EpisodeResponse && previousDuration != duration) {
+                    updateEpisodes = true
+                }
 
                 if (this is EpisodeResponse) {
                     nextAiring = nextAiring ?: meta.nextAiring
@@ -1676,6 +1723,10 @@ class ResultViewModel2 : ViewModel() {
 
                 recommendations = recommendations?.union(realRecommendations)?.toList()
                     ?: realRecommendations
+                ResultDebugLogger.log(
+                    "Meta",
+                    "after sync meta merge poster=$posterUrl background=$backgroundPosterUrl logo=$logoUrl"
+                )
             }
 
             for ((k, v) in syncs ?: emptyMap()) {
@@ -1737,6 +1788,21 @@ class ResultViewModel2 : ViewModel() {
                     if (meta == null) return@runAllAsync
                     addTrailer(meta.trailers)
                 }, {
+                    if (logoUrl != null) {
+                        ResultDebugLogger.log("Meta", "fanart skipped reason=provider_logo_exists logo=$logoUrl")
+                        return@runAllAsync
+                    }
+                    if (!type.isEpisodeBased()) {
+                        ResultDebugLogger.log("Meta", "fanart skipped reason=not_series type=$type")
+                        return@runAllAsync
+                    }
+                    logoUrl = FanartTitleLogoApi.getSeriesLogo(
+                        titleCandidates = getLogoTitleCandidates(this, meta),
+                        year = year,
+                        tmdbId = getTMDbId()
+                    )
+                    ResultDebugLogger.log("Meta", "fanart finished logo=$logoUrl")
+                }, {
                     if (this !is AnimeLoadResponse) return@runAllAsync
                     val map =
                         Kitsu.getEpisodesDetails(
@@ -1774,6 +1840,10 @@ class ResultViewModel2 : ViewModel() {
                         updateCount > 0
                     }.any { it }
                 })
+            ResultDebugLogger.log(
+                "Meta",
+                "applyMeta end name=$name poster=$posterUrl background=$backgroundPosterUrl logo=$logoUrl"
+            )
         }
         return out to updateEpisodes
     }
@@ -1839,11 +1909,30 @@ class ResultViewModel2 : ViewModel() {
         postEpisodeRange(currentIndex, currentRange, sortType)
     }
 
+    private fun ResultEpisode.withPlaybackState(): ResultEpisode {
+        val posDur = getViewPos(id)
+        val watchState = getVideoWatchState(id) ?: VideoWatchState.None
+        return copy(
+            position = posDur?.position ?: 0,
+            duration = posDur?.duration ?: 0,
+            videoWatchState = watchState
+        )
+    }
+
+    private fun ResultEpisode.playOrderKey(): Int {
+        return totalEpisodeIndex ?: ((seasonIndex ?: 0) * 100_000 + episode)
+    }
+
+    fun getFirstEpisodeToPlay(): ResultEpisode? {
+        if (currentResponse?.isEpisodeBased() != true) return null
+        return currentEpisodes.values
+            .flatten()
+            .minWithOrNull(compareBy<ResultEpisode>({ it.playOrderKey() }, { it.index }))
+            ?.withPlaybackState()
+    }
+
     private fun getMovie(): ResultEpisode? {
-        return currentEpisodes.entries.firstOrNull()?.value?.firstOrNull()?.let { ep ->
-            val posDur = getViewPos(ep.id)
-            ep.copy(position = posDur?.position ?: 0, duration = posDur?.duration ?: 0)
-        }
+        return currentEpisodes.entries.firstOrNull()?.value?.firstOrNull()?.withPlaybackState()
     }
 
     private fun getEpisodes(
@@ -1853,15 +1942,7 @@ class ResultViewModel2 : ViewModel() {
         return currentEpisodes[indexer]?.let { list ->
             val start = minOf(list.size, range.startIndex)
             val end = minOf(list.size, start + range.length)
-            list.subList(start, end).map {
-                val posDur = getViewPos(it.id)
-                val watchState = getVideoWatchState(it.id) ?: VideoWatchState.None
-                it.copy(
-                    position = posDur?.position ?: 0,
-                    duration = posDur?.duration ?: 0,
-                    videoWatchState = watchState
-                )
-            }
+            list.subList(start, end).map { it.withPlaybackState() }
         } ?: emptyList()
     }
 
@@ -1873,12 +1954,57 @@ class ResultViewModel2 : ViewModel() {
             EpisodeSortType.NUMBER_ASC -> episodes.sortedBy { it.episode }
             EpisodeSortType.NUMBER_DESC -> episodes.sortedByDescending { it.episode }
             EpisodeSortType.RATING_HIGH_LOW -> episodes.sortedByDescending {
-                it.score?.toDouble() ?: 0.0
+                it.sortableRating()
             }
 
-            EpisodeSortType.RATING_LOW_HIGH -> episodes.sortedBy { it.score?.toDouble() ?: 0.0 }
+            EpisodeSortType.RATING_LOW_HIGH -> episodes.sortedBy { it.sortableRating() }
             EpisodeSortType.DATE_NEWEST -> episodes.sortedByDescending { it.airDate }
             EpisodeSortType.DATE_OLDEST -> episodes.sortedBy { it.airDate }
+        }
+    }
+
+    private fun ResultEpisode.sortableRating(): Double {
+        return imdbScore?.toDouble() ?: score?.toDouble() ?: 0.0
+    }
+
+    private fun ResultEpisode.toImdbEpisodeKey(): ImdbEpisodeKey {
+        return ImdbEpisodeKey(
+            season = seasonIndex ?: season ?: 1,
+            episode = episode
+        )
+    }
+
+    private fun applyImdbEpisodeMetadata(
+        episodes: Map<EpisodeIndexer, List<ResultEpisode>>,
+        imdbEpisodeMetadata: Map<ImdbEpisodeKey, ImdbEpisodeMetadata>,
+    ): Map<EpisodeIndexer, List<ResultEpisode>> {
+        if (imdbEpisodeMetadata.isEmpty()) return episodes
+        return episodes.mapValues { (_, episodeList) ->
+            episodeList.map { episode ->
+                val metadata = imdbEpisodeMetadata[episode.toImdbEpisodeKey()]
+                val imdbScore = metadata?.score
+                val imdbRuntimeSeconds = metadata?.runtimeSeconds
+                val imdbTitle = filterName(metadata?.title)
+                val imdbDescription = metadata?.description?.takeIf { it.isNotBlank() }
+                val mergedName = episode.name?.takeIf { it.isNotBlank() } ?: imdbTitle
+                val mergedDescription =
+                    episode.description?.takeIf { it.isNotBlank() } ?: imdbDescription
+                if (
+                    episode.imdbScore == imdbScore &&
+                    episode.imdbRuntimeSeconds == imdbRuntimeSeconds &&
+                    episode.name == mergedName &&
+                    episode.description == mergedDescription
+                ) {
+                    episode
+                } else {
+                    episode.copy(
+                        name = mergedName,
+                        imdbScore = imdbScore,
+                        description = mergedDescription,
+                        imdbRuntimeSeconds = imdbRuntimeSeconds
+                    )
+                }
+            }
         }
     }
 
@@ -1956,7 +2082,7 @@ class ResultViewModel2 : ViewModel() {
         return when (type) {
             EpisodeSortType.NUMBER_ASC, EpisodeSortType.NUMBER_DESC -> true
             EpisodeSortType.RATING_HIGH_LOW, EpisodeSortType.RATING_LOW_HIGH ->
-                episodes.any { it.score != null }
+                episodes.any { it.imdbScore != null || it.score != null }
 
             EpisodeSortType.DATE_NEWEST, EpisodeSortType.DATE_OLDEST ->
                 episodes.any { it.airDate != null }
@@ -2129,15 +2255,23 @@ class ResultViewModel2 : ViewModel() {
         updateEpisodes: Boolean,
         updateFillers: Boolean,
     ) {
+        val previousUniqueUrl = currentResponse?.uniqueUrl
         currentId = mainId
         currentResponse = loadResponse
+        if (previousUniqueUrl != loadResponse.uniqueUrl) {
+            currentImdbRatingData = null
+            currentImdbEpisodeMetadata = emptyMap()
+        }
         postPage(loadResponse, apiRepository)
+        refreshImdbRating(loadResponse, apiRepository)
         postSubscription(loadResponse)
         postFavorites(loadResponse)
         _watchStatus.postValue(getResultWatchState(mainId))
 
-        if (updateEpisodes)
+        if (updateEpisodes) {
             postEpisodes(loadResponse, mainId, updateFillers)
+            refreshImdbEpisodeRatings(loadResponse, apiRepository)
+        }
     }
 
     private suspend fun postEpisodes(
@@ -2195,6 +2329,7 @@ class ResultViewModel2 : ViewModel() {
                                     totalIndex,
                                     airDate = i.date,
                                     runTime = i.runTime,
+                                    fallbackRuntimeMinutes = loadResponse.duration,
                                     seasonData = seasonData,
                                 )
 
@@ -2252,6 +2387,7 @@ class ResultViewModel2 : ViewModel() {
                                 totalIndex,
                                 airDate = episode.date,
                                 runTime = episode.runTime,
+                                fallbackRuntimeMinutes = loadResponse.duration,
                                 seasonData = seasonData,
                             )
 
@@ -2285,6 +2421,7 @@ class ResultViewModel2 : ViewModel() {
                         loadResponse.type,
                         mainId,
                         null,
+                        fallbackRuntimeMinutes = loadResponse.duration,
                     )
                 )
             }
@@ -2307,7 +2444,8 @@ class ResultViewModel2 : ViewModel() {
                         null,
                         loadResponse.type,
                         mainId,
-                        null
+                        null,
+                        fallbackRuntimeMinutes = loadResponse.duration,
                     )
                 )
             }
@@ -2330,7 +2468,8 @@ class ResultViewModel2 : ViewModel() {
                         null,
                         loadResponse.type,
                         mainId,
-                        null
+                        null,
+                        fallbackRuntimeMinutes = loadResponse.duration,
                     )
                 )
             }
@@ -2355,8 +2494,8 @@ class ResultViewModel2 : ViewModel() {
             })
         }
 
-        currentEpisodes = allEpisodes
-        val ranges = getRanges(allEpisodes, EPISODE_RANGE_SIZE)
+        currentEpisodes = applyImdbEpisodeMetadata(allEpisodes, currentImdbEpisodeMetadata)
+        val ranges = getRanges(currentEpisodes, EPISODE_RANGE_SIZE)
         currentRanges = ranges
 
 
@@ -2412,44 +2551,76 @@ class ResultViewModel2 : ViewModel() {
     }
 
     private fun loadTrailers(loadResponse: LoadResponse) = ioSafe {
-        _trailers.postValue(
-            getTrailers(
-                loadResponse,
-                3
-            )
-        ) // we dont want to fetch too many trailers
+        val limit = 3
+        // Intentionally provider-only: do not fallback to IMDb trailer pages.
+        val providerTrailers = getTrailers(loadResponse, limit)
+        val providerExtractedCount = providerTrailers.sumOf { it.mirros.size }
+        ResultDebugLogger.log(
+            "IMDb",
+            "trailers source=provider extracted=$providerExtractedCount"
+        )
+        _trailers.postValue(providerTrailers)
     }
 
     private suspend fun getTrailers(
         loadResponse: LoadResponse,
         limit: Int = 0
+    ): List<ExtractedTrailerData> {
+        return getTrailers(loadResponse.trailers, limit)
+    }
+
+    private suspend fun getImdbTrailers(
+        loadResponse: LoadResponse,
+        titleCandidates: List<String>,
+        limit: Int = 0
+    ): List<ExtractedTrailerData> {
+        val imdbTrailerCandidates = ImdbTitleVideoApi.getTrailerCandidates(
+            imdbId = loadResponse.getImdbId(),
+            titleCandidates = titleCandidates,
+            year = loadResponse.year,
+            isEpisodeBased = loadResponse.type.isEpisodeBased(),
+            limit = limit
+        )
+        if (imdbTrailerCandidates.isEmpty()) return emptyList()
+        return getTrailers(imdbTrailerCandidates, limit).also { extractedTrailers ->
+            ResultDebugLogger.log(
+                "IMDb",
+                "trailer extraction imdbCandidates=${imdbTrailerCandidates.size} extracted=${extractedTrailers.sumOf { it.mirros.size }}"
+            )
+        }
+    }
+
+    private suspend fun getTrailers(
+        trailerCandidates: List<TrailerData>,
+        limit: Int = 0
     ): List<ExtractedTrailerData> =
         coroutineScope {
             val returnlist = ArrayList<ExtractedTrailerData>()
-            loadResponse.trailers.windowed(limit, limit, true).takeWhile { list ->
+            val windowSize = if (limit > 0) limit else trailerCandidates.size.coerceAtLeast(1)
+            trailerCandidates.windowed(windowSize, windowSize, true).takeWhile { list ->
                 list.amap { trailerData ->
                     try {
                         val links = arrayListOf<Pair<ExtractorLink,String>>()
                         val subs = arrayListOf<SubtitleFile>()
-                        if (!loadExtractor(
+                        loadExtractor(
+                            trailerData.extractorUrl,
+                            trailerData.referer,
+                            { subs.add(it) },
+                            { links.add(Pair(it, trailerData.extractorUrl)) })
+
+                        // If extraction fails, keep a fallback entry so trailer button can still open source URL.
+                        if (links.isEmpty() && trailerData.extractorUrl.startsWith("http")) {
+                            val fallbackLink = newExtractorLink(
+                                "",
+                                "Trailer",
                                 trailerData.extractorUrl,
-                                trailerData.referer,
-                                { subs.add(it) },
-                                { links.add(Pair(it,trailerData.extractorUrl))}) && trailerData.raw
-                        ) {
-                            arrayListOf(
-                                Pair(
-                                    newExtractorLink(
-                                    "",
-                                    "Trailer",
-                                    trailerData.extractorUrl,
-                                    type = INFER_TYPE
-                                ) {
-                                    this.referer = trailerData.referer ?: ""
-                                    this.quality = Qualities.Unknown.value
-                                    this.headers = trailerData.headers
-                                },trailerData.extractorUrl)
-                            ) to arrayListOf()
+                                type = INFER_TYPE
+                            ) {
+                                this.referer = trailerData.referer ?: ""
+                                this.quality = Qualities.Unknown.value
+                                this.headers = trailerData.headers
+                            }
+                            arrayListOf(Pair(fallbackLink, trailerData.extractorUrl)) to subs
                         } else {
                             links to subs
                         }
@@ -2470,7 +2641,82 @@ class ResultViewModel2 : ViewModel() {
     // this instantly updates the metadata on the page
     private fun postPage(loadResponse: LoadResponse, apiRepository: APIRepository) {
         _recommendations.postValue(loadResponse.recommendations ?: emptyList())
-        _page.postValue(Resource.Success(loadResponse.toResultData(apiRepository)))
+        _page.postValue(
+            Resource.Success(loadResponse.toResultData(apiRepository, currentImdbRatingData))
+        )
+    }
+
+    private fun refreshImdbRating(
+        loadResponse: LoadResponse,
+        apiRepository: APIRepository,
+    ) {
+        val requestKey = loadResponse.uniqueUrl
+        val titleCandidates = getLogoTitleCandidates(loadResponse, currentMeta)
+        val imdbId = loadResponse.getImdbId()
+
+        viewModelScope.launchSafe {
+            val imdbRatingData = ioWork {
+                ImdbTitleRatingApi.getTitleRating(
+                    imdbId = imdbId,
+                    titleCandidates = titleCandidates,
+                    year = loadResponse.year,
+                    isEpisodeBased = loadResponse.type.isEpisodeBased(),
+                )
+            }
+            if (currentResponse?.uniqueUrl != requestKey || currentRepo != apiRepository) {
+                return@launchSafe
+            }
+
+            currentImdbRatingData = imdbRatingData
+            ResultDebugLogger.log(
+                "IMDb",
+                "page refresh title=${loadResponse.name} imdbId=$imdbId rating=${imdbRatingData?.aggregateRating} votes=${imdbRatingData?.voteCount}"
+            )
+            postPage(loadResponse, apiRepository)
+        }
+    }
+
+    private fun refreshImdbEpisodeRatings(
+        loadResponse: LoadResponse,
+        apiRepository: APIRepository,
+    ) {
+        if (!loadResponse.type.isEpisodeBased()) return
+        if (currentEpisodes.isEmpty()) return
+        if (currentImdbEpisodeMetadata.isNotEmpty()) return
+
+        val requestKey = loadResponse.uniqueUrl
+        val titleCandidates = getLogoTitleCandidates(loadResponse, currentMeta)
+        val imdbId = loadResponse.getImdbId()
+
+        viewModelScope.launchSafe {
+            val imdbEpisodeMetadata = ioWork {
+                ImdbEpisodeRatingApi.getEpisodeMetadata(
+                    imdbId = imdbId,
+                    titleCandidates = titleCandidates,
+                    year = loadResponse.year,
+                    isEpisodeBased = loadResponse.type.isEpisodeBased(),
+                )
+            }
+            if (currentResponse?.uniqueUrl != requestKey || currentRepo != apiRepository) {
+                return@launchSafe
+            }
+            if (imdbEpisodeMetadata.isEmpty()) {
+                ResultDebugLogger.log(
+                    "IMDb",
+                    "episode refresh title=${loadResponse.name} imdbId=$imdbId metadata=empty"
+                )
+                return@launchSafe
+            }
+
+            currentImdbEpisodeMetadata = imdbEpisodeMetadata
+            currentEpisodes = applyImdbEpisodeMetadata(currentEpisodes, currentImdbEpisodeMetadata)
+            currentRanges = getRanges(currentEpisodes, EPISODE_RANGE_SIZE)
+            ResultDebugLogger.log(
+                "IMDb",
+                "episode refresh title=${loadResponse.name} imdbId=$imdbId metadata=${imdbEpisodeMetadata.size}"
+            )
+            postEpisodeRange(currentIndex, currentRange, currentSorting ?: DataStoreHelper.resultsSortingMode)
+        }
     }
 
     fun hasLoaded() = currentResponse != null
@@ -2587,6 +2833,7 @@ class ResultViewModel2 : ViewModel() {
         loadTrailers: Boolean = true,
     ) =
         ioSafe {
+            ResultDebugLogger.reset("load api=$apiName url=$url")
             _page.postValue(Resource.Loading(url))
             _episodes.postValue(Resource.Loading())
 
@@ -2596,6 +2843,7 @@ class ResultViewModel2 : ViewModel() {
             // set api
             val api = APIHolder.getApiFromNameNull(apiName) ?: APIHolder.getApiFromUrlNull(url)
             if (api == null) {
+                ResultDebugLogger.log("Load", "api lookup failed apiName=$apiName url=$url")
                 _page.postValue(
                     Resource.Failure(
                         false,
@@ -2613,9 +2861,11 @@ class ResultViewModel2 : ViewModel() {
                     api
                 )
             }
+            ResultDebugLogger.log("Load", "redirect resultType=${validUrlResource::class.simpleName}")
 
             if (validUrlResource !is Resource.Success) {
                 if (validUrlResource is Resource.Failure) {
+                    ResultDebugLogger.log("Load", "redirect failure message=${validUrlResource.errorString}")
                     _page.postValue(validUrlResource)
                 }
 
@@ -2625,17 +2875,30 @@ class ResultViewModel2 : ViewModel() {
             val validUrl = validUrlResource.value
             val repo = APIRepository(api)
             currentRepo = repo
+            ResultDebugLogger.log(
+                "Load",
+                "repo.load api=${api.name} validUrl=$validUrl currentMetaTitle=${currentMeta?.title} syncCount=${currentSync?.size ?: 0}"
+            )
 
             when (val data = repo.load(validUrl)) {
                 is Resource.Failure -> {
+                    ResultDebugLogger.log("Load", "repo.load failure message=${data.errorString}")
                     _page.postValue(data)
                 }
 
                 is Resource.Success -> {
+                    ResultDebugLogger.log(
+                        "Load",
+                        "repo.load success name=${data.value.name} type=${data.value.type} poster=${data.value.posterUrl} background=${data.value.backgroundPosterUrl} logo=${data.value.logoUrl}"
+                    )
                     if (!isActive) return@ioSafe
                     val loadResponse = ioWork {
                         applyMeta(data.value, currentMeta, currentSync).first
                     }
+                    ResultDebugLogger.log(
+                        "Load",
+                        "applyMeta result name=${loadResponse.name} type=${loadResponse.type} poster=${loadResponse.posterUrl} background=${loadResponse.backgroundPosterUrl} logo=${loadResponse.logoUrl} tmdb=${loadResponse.getTMDbId()}"
+                    )
                     if (!isActive) return@ioSafe
                     val mainId = loadResponse.getId()
 
@@ -2657,9 +2920,9 @@ class ResultViewModel2 : ViewModel() {
                         )
                     )
                     if (loadTrailers)
-                        loadTrailers(data.value)
+                        loadTrailers(loadResponse)
                     postSuccessful(
-                        data.value,
+                        loadResponse,
                         mainId,
                         updateEpisodes = true,
                         updateFillers = showFillers,

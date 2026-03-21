@@ -1,50 +1,61 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="15dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginTop="3dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginBottom="3dp"
+    android:background="@drawable/bg_popup_item"
     android:gravity="center_vertical"
-    android:orientation="horizontal">
+    android:minHeight="56dp"
+    android:orientation="horizontal"
+    android:paddingStart="14dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="10dp">
 
     <TextView
         android:id="@+id/priority_text"
-        style="@style/NoCheckLabel"
-        android:layout_width="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_toStartOf="@+id/subtract_button"
+        style="@style/PopupChoiceLabelNoCheck"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:background="@null"
+        android:minHeight="0dp"
+        android:padding="0dp"
         tools:text="hello" />
 
     <ImageView
         android:id="@+id/subtract_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_toStartOf="@id/priority_number"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:padding="10dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_popup_field"
         android:focusable="true"
-        android:src="@drawable/baseline_remove_24" />
+        android:padding="8dp"
+        android:src="@drawable/baseline_remove_24"
+        app:tint="?attr/colorPrimary" />
 
     <TextView
         android:id="@+id/priority_number"
-        style="@style/NoCheckLabel"
+        style="@style/PopupChoiceLabelNoCheck"
         android:layout_width="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_toStartOf="@id/add_button"
+        android:layout_marginHorizontal="10dp"
+        android:background="@null"
         android:gravity="center"
-        android:minWidth="50dp"
-        android:textColor="?attr/textColor"
+        android:minHeight="0dp"
+        android:minWidth="24dp"
+        android:padding="0dp"
         tools:text="1" />
 
     <ImageView
         android:id="@+id/add_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:padding="10dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_popup_field"
         android:focusable="true"
-        android:src="@drawable/ic_baseline_add_24" />
+        android:padding="8dp"
+        android:src="@drawable/ic_baseline_add_24"
+        app:tint="?attr/colorPrimary" />
 
-</RelativeLayout>
+</LinearLayout>

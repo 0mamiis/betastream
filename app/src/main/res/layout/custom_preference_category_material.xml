@@ -19,43 +19,33 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingStart="?android:attr/listPreferredItemPaddingStart"
-    android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
-    android:background="@drawable/outline_drawable_less"
-    android:baselineAligned="false"
+    android:layout_marginStart="14dp"
     android:layout_marginTop="16dp"
-    android:gravity="center_vertical">
+    android:layout_marginEnd="14dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
 
-    <include layout="@layout/image_frame"/>
-
-    <RelativeLayout
-        android:layout_width="0dp"
+    <TextView
+        android:id="@android:id/title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:letterSpacing="0.14"
+        android:textAllCaps="true"
+        android:textColor="?attr/grayTextColor"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="10dp"
         android:layout_weight="1"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
+        android:background="@drawable/bg_settings_divider" />
 
-        <TextView
-            android:id="@android:id/title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="start"
-            android:textAlignment="viewStart"
-            style="@style/PreferenceCategoryTitleTextStyle"/>
-
-        <TextView
-            android:id="@android:id/summary"
-            android:ellipsize="end"
-            android:singleLine="true"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@android:id/title"
-            android:layout_alignStart="@android:id/title"
-            android:layout_gravity="start"
-            android:textAlignment="viewStart"
-            android:textColor="?android:attr/textColorSecondary"
-            android:maxLines="10"
-            style="@style/PreferenceSummaryTextStyle"/>
-
-    </RelativeLayout>
+    <TextView
+        android:id="@android:id/summary"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        style="@style/PreferenceSummaryTextStyle" />
 </LinearLayout>

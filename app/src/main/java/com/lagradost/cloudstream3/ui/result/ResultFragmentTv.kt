@@ -36,7 +36,9 @@ import com.lagradost.cloudstream3.ui.player.ExtractorLinkGenerator
 import com.lagradost.cloudstream3.ui.player.GeneratorPlayer
 import com.lagradost.cloudstream3.ui.player.NEXT_WATCH_EPISODE_PERCENTAGE
 import com.lagradost.cloudstream3.ui.quicksearch.QuickSearchFragment
+import com.lagradost.cloudstream3.ui.result.ResultFragment.bindImdbRating
 import com.lagradost.cloudstream3.ui.result.ResultFragment.bindLogo
+import com.lagradost.cloudstream3.ui.result.ResultFragment.bindLogoImage
 import com.lagradost.cloudstream3.ui.result.ResultFragment.getStoredData
 import com.lagradost.cloudstream3.ui.result.ResultFragment.updateUIEvent
 import com.lagradost.cloudstream3.ui.search.SEARCH_ACTION_FOCUSED
@@ -477,8 +479,10 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
         }
 
         observeNullable(viewModel.resumeWatching) { resume ->
+            val playTarget = viewModel.getFirstEpisodeToPlay()
             binding.apply {
-                if (resume == null) {
+                if (resume == null && playTarget == null) {
+                    resultResumeSeries.isGone = true
                     return@observeNullable
                 }
 
@@ -486,7 +490,28 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
                 resultPlayMovie.isVisible = false
                 resultPlaySeries.isVisible = false
 
+                if (resume == null) {
+                    val playEpisode = playTarget ?: return@observeNullable
+                    resultResumeProgressHolder.isVisible = false
+                    focusPlayButton()
+                    resultResumeSeriesButton.setIconResource(R.drawable.ic_baseline_play_arrow_24)
+                    resultResumeSeriesText.text = resources.getString(R.string.home_play)
+                    resultResumeSeriesButton.setOnClickListener {
+                        viewModel.handleAction(
+                            EpisodeClickEvent(ACTION_CLICK_DEFAULT, playEpisode)
+                        )
+                    }
+                    resultResumeSeriesButton.setOnLongClickListener {
+                        viewModel.handleAction(
+                            EpisodeClickEvent(ACTION_SHOW_OPTIONS, playEpisode)
+                        )
+                        true
+                    }
+                    return@observeNullable
+                }
+
                 // show progress no matter if series or movie
+                resultResumeSeriesButton.setIconResource(R.drawable.ic_baseline_resume_arrow2)
                 resume.progress?.let { progress ->
                     resultResumeSeriesTitle.apply {
                         isVisible = !resume.isMovie
@@ -863,6 +888,10 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
                 when (data) {
                     is Resource.Success -> {
                         val d = data.value
+                        ResultDebugLogger.log(
+                            "UI",
+                            "tv bind title=${d.title} posterImage=${d.posterImage} background=${d.posterBackgroundImage} logoUrl=${d.logoUrl}"
+                        )
                         resultVpn.setText(d.vpnText)
                         resultInfo.setText(d.metaText)
                         resultNoEpisodes.setText(d.noEpisodesFoundText)
@@ -871,8 +900,13 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
                         resultMetaType.setText(d.typeText)
                         resultMetaYear.setText(d.yearText)
                         resultMetaDuration.setText(d.durationText)
-                        resultMetaRating.setText(d.ratingText)
-                        resultMetaStatus.setText(d.onGoingText)
+                        bindImdbRating(
+                            resultMetaImdb,
+                            resultMetaRating,
+                            resultMetaRatingVotes,
+                            d.imdbRatingText,
+                            d.imdbVotesText
+                        )
                         resultMetaContentRating.setText(d.contentRatingText)
                         resultCastText.setText(d.actorsText)
                         resultNextAiring.setText(d.nextAiringEpisode)
@@ -919,6 +953,15 @@ class ResultFragmentTv : BaseFragment<FragmentResultTvBinding>(
                             headers = d.posterHeaders,
                             titleView = resultTitle,
                             logoView = backgroundPosterWatermarkBadgeHolder
+                        )
+                        bindLogoImage(
+                            url = d.logoUrl,
+                            headers = d.posterHeaders,
+                            logoView = resultPosterLogo
+                        )
+                        ResultDebugLogger.log(
+                            "UI",
+                            "tv posterLogoVisible=${resultPosterLogo.isVisible} backgroundLogoVisible=${backgroundPosterWatermarkBadgeHolder.isVisible}"
                         )
 
                         comingSoon = d.comingSoon

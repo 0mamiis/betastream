@@ -100,11 +100,47 @@
             style="@style/SubButton"
             android:layout_gravity="end" />
 
-        <TextView
-            android:id="@+id/text_rating"
-            style="@style/RatingButton"
+        <LinearLayout
+            android:id="@+id/imdb_rating_holder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="end"
-            tools:text="7.7" />
+            android:background="@drawable/bg_imdb_card_minimal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="1dp"
+            android:layout_marginEnd="2dp"
+            android:orientation="horizontal"
+            android:minHeight="9dp"
+            android:paddingStart="1dp"
+            android:paddingEnd="1dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <FrameLayout
+                android:layout_width="18dp"
+                android:layout_height="9dp">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/imdb_rating_icon"
+                    android:layout_width="18dp"
+                    android:layout_height="9dp"
+                    android:layout_gravity="center"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@null"
+                    app:srcCompat="@drawable/imdb_logo" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/text_rating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:layout_marginStart="1dp"
+                android:textColor="@android:color/black"
+                android:textSize="8.5sp"
+                android:textStyle="bold"
+                tools:text="7.7" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/text_flag"
